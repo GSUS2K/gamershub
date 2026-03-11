@@ -35,7 +35,7 @@ const Warning = mongoose.model('Warning', new mongoose.Schema({
 
 const {
   Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes,
-  EmbedBuilder, PermissionFlagsBits
+  EmbedBuilder, PermissionFlagsBits, MessageFlags
 } = require('discord.js');
 const {
   joinVoiceChannel, createAudioPlayer, createAudioResource,
@@ -491,7 +491,7 @@ client.on('interactionCreate', async (interaction) => {
     else if (commandName === 'kick') {
       const target = interaction.options.getMember('user');
       const reason = interaction.options.getString('reason') || 'No reason provided';
-      if (!target?.kickable) return interaction.reply({ content: "❌ I can't kick that user (they may have higher permissions).", ephemeral: true });
+      if (!target?.kickable) return interaction.reply({ content: "❌ I can't kick that user (they may have higher permissions).", flags: MessageFlags.Ephemeral });
       await target.kick(reason);
       await interaction.reply({ embeds: [mkEmbed('#e74c3c','👢 Member Kicked',
         `**${target.user.tag}** has been kicked.\n**Reason:** ${reason}\n**Kicked by:** ${interaction.user.tag}`
@@ -501,7 +501,7 @@ client.on('interactionCreate', async (interaction) => {
     else if (commandName === 'ban') {
       const target = interaction.options.getMember('user');
       const reason = interaction.options.getString('reason') || 'No reason provided';
-      if (!target?.bannable) return interaction.reply({ content: "❌ I can't ban that user.", ephemeral: true });
+      if (!target?.bannable) return interaction.reply({ content: "❌ I can't ban that user.", flags: MessageFlags.Ephemeral });
       await target.ban({ reason, deleteMessageSeconds: 86400 });
       await interaction.reply({ embeds: [mkEmbed('#c0392b','🔨 Member Banned',
         `**${target.user.tag}** has been banned.\n**Reason:** ${reason}\n**Banned by:** ${interaction.user.tag}`
@@ -646,7 +646,7 @@ client.on('interactionCreate', async (interaction) => {
   // const riotId = interaction.options.getString('riotid');
   // const region = interaction.options.getString('region');
   // linkedAccounts.set(interaction.user.id, { riotId, region });
-  // await interaction.reply({ content: `✅ Linked **${riotId}** (${region.toUpperCase()}) to your Discord!`, ephemeral: true });
+  // await interaction.reply({ content: `✅ Linked **${riotId}** (${region.toUpperCase()}) to your Discord!`, flags: MessageFlags.Ephemeral });
   // }
 
     // else if (commandName === 'link') {
@@ -657,18 +657,18 @@ client.on('interactionCreate', async (interaction) => {
     //     { riotId, region },
     //     { upsert: true }
     //   );
-    //   await interaction.reply({ content: `✅ Linked **${riotId}** (${region.toUpperCase()}) to your Discord!`, ephemeral: true });
+    //   await interaction.reply({ content: `✅ Linked **${riotId}** (${region.toUpperCase()}) to your Discord!`, flags: MessageFlags.Ephemeral });
     // }
 
     else if (commandName === 'link') {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
       try {
         const riotId = interaction.options.getString('riotid');
         const region = interaction.options.getString('region');
         await LinkedAccount.findOneAndUpdate(
           { discordId: interaction.user.id },
           { riotId, region },
-          { upsert: true, new: true }
+          { upsert: true, returnDocument: 'after' }
         );
         await interaction.editReply(`✅ Linked **${riotId}** (${region.toUpperCase()}) to your Discord!`);
       } catch (err) {
@@ -803,7 +803,7 @@ client.on('interactionCreate', async (interaction) => {
     //     .map(([k, v]) => ({ userId: k.replace(prefix,''), ...v }))
     //     .sort((a, b) => (b.level*10000 + b.xp) - (a.level*10000 + a.xp))
     //     .slice(0, 10);
-    //   if (!sorted.length) return interaction.reply({ content: 'No XP earned yet! Start chatting to appear on the leaderboard.', ephemeral: true });
+    //   if (!sorted.length) return interaction.reply({ content: 'No XP earned yet! Start chatting to appear on the leaderboard.', flags: MessageFlags.Ephemeral });
     //   const medals = ['🥇','🥈','🥉'];
     //   const lines = sorted.map((e, i) => `${medals[i] || `**${i+1}.**`} <@${e.userId}> — Level ${e.level} *(${e.xp} XP)*`).join('\n');
     //   await interaction.reply({ embeds: [mkEmbed('#f1c40f','🏆 XP Leaderboard', lines)] });
@@ -813,7 +813,7 @@ client.on('interactionCreate', async (interaction) => {
       const prefix = `${interaction.guildId}-`;
       const entries = await XPData.find({ key: new RegExp(`^${prefix}`) })
         .sort({ level: -1, xp: -1 }).limit(10);
-      if (!entries.length) return interaction.reply({ content: 'No XP earned yet!', ephemeral: true });
+      if (!entries.length) return interaction.reply({ content: 'No XP earned yet!', flags: MessageFlags.Ephemeral });
       const medals = ['🥇','🥈','🥉'];
       const lines = entries.map((e, i) => `${medals[i] || `**${i+1}.**`} <@${e.key.replace(prefix,'')}> — Level ${e.level} *(${e.xp} XP)*`).join('\n');
       await interaction.reply({ embeds: [mkEmbed('#f1c40f','🏆 XP Leaderboard', lines)] });
@@ -847,9 +847,9 @@ client.on('interactionCreate', async (interaction) => {
     else if (commandName === 'play') {
       const query = interaction.options.getString('query');
       const voiceChannel = interaction.member.voice?.channel;
-      if (!voiceChannel) return interaction.reply({ content: '❌ You need to be in a voice channel first!', ephemeral: true });
+      if (!voiceChannel) return interaction.reply({ content: '❌ You need to be in a voice channel first!', flags: MessageFlags.Ephemeral });
       const perms = voiceChannel.permissionsFor(interaction.guild.members.me);
-      if (!perms?.has(['Connect','Speak'])) return interaction.reply({ content: "❌ I don't have permission to join/speak in that channel.", ephemeral: true });
+      if (!perms?.has(['Connect','Speak'])) return interaction.reply({ content: "❌ I don't have permission to join/speak in that channel.", flags: MessageFlags.Ephemeral });
 
       await interaction.deferReply();
 
@@ -902,7 +902,7 @@ client.on('interactionCreate', async (interaction) => {
 
     else if (commandName === 'skip') {
       const q = getQueue(interaction.guildId);
-      if (!q?.current) return interaction.reply({ content: '❌ Nothing is playing!', ephemeral: true });
+      if (!q?.current) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
       const skipped = q.current.title;
       q.player.stop();
       await interaction.reply({ embeds: [mkEmbed('#1db954','⏭️ Skipped', `**${skipped}**`)] });
@@ -910,7 +910,7 @@ client.on('interactionCreate', async (interaction) => {
 
     else if (commandName === 'stop') {
       const q = getQueue(interaction.guildId);
-      if (!q) return interaction.reply({ content: '❌ Nothing is playing!', ephemeral: true });
+      if (!q) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
       q.songs = [];
       q.player.stop();
       q.connection.destroy();
@@ -920,7 +920,7 @@ client.on('interactionCreate', async (interaction) => {
 
     else if (commandName === 'queue') {
       const q = getQueue(interaction.guildId);
-      if (!q?.current && (!q?.songs || q.songs.length === 0)) return interaction.reply({ content: '❌ The queue is empty!', ephemeral: true });
+      if (!q?.current && (!q?.songs || q.songs.length === 0)) return interaction.reply({ content: '❌ The queue is empty!', flags: MessageFlags.Ephemeral });
       const lines = [];
       if (q.current) lines.push(`▶️ **NOW:** ${q.current.title} \`[${q.current.duration}]\``);
       q.songs.forEach((s, i) => lines.push(`**${i+1}.** ${s.title} \`[${s.duration}]\` — *${s.requester}*`));
@@ -929,7 +929,7 @@ client.on('interactionCreate', async (interaction) => {
 
     else if (commandName === 'nowplaying') {
       const q = getQueue(interaction.guildId);
-      if (!q?.current) return interaction.reply({ content: '❌ Nothing is playing!', ephemeral: true });
+      if (!q?.current) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
       await interaction.reply({ embeds: [mkEmbed('#1db954','🎵 Now Playing',
         `**${q.current.title}**\nDuration: \`${q.current.duration}\` | Requested by: **${q.current.requester}**`
       )]});
@@ -937,14 +937,14 @@ client.on('interactionCreate', async (interaction) => {
 
     else if (commandName === 'pause') {
       const q = getQueue(interaction.guildId);
-      if (!q?.current) return interaction.reply({ content: '❌ Nothing is playing!', ephemeral: true });
+      if (!q?.current) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
       q.player.pause();
       await interaction.reply({ embeds: [mkEmbed('#f39c12','⏸️ Paused', `**${q.current.title}** has been paused. Use \`/resume\` to continue.`)] });
     }
 
     else if (commandName === 'resume') {
       const q = getQueue(interaction.guildId);
-      if (!q) return interaction.reply({ content: '❌ Nothing is paused!', ephemeral: true });
+      if (!q) return interaction.reply({ content: '❌ Nothing is paused!', flags: MessageFlags.Ephemeral });
       q.player.unpause();
       await interaction.reply({ embeds: [mkEmbed('#1db954','▶️ Resumed', `**${q.current?.title || 'Music'}** is playing again.`)] });
     }
@@ -955,19 +955,19 @@ client.on('interactionCreate', async (interaction) => {
     // ════════════════════════════════════════════
 
     else if (commandName === 'relay') {
-      if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: '❌ This command is owner-only.', ephemeral: true });
+      if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: '❌ This command is owner-only.', flags: MessageFlags.Ephemeral });
       const channel = interaction.options.getChannel('channel');
       const message = interaction.options.getString('message');
       await channel.send(message);
-      await interaction.reply({ content: `✅ Message sent to ${channel}.`, ephemeral: true });
+      await interaction.reply({ content: `✅ Message sent to ${channel}.`, flags: MessageFlags.Ephemeral });
     }
 
     else if (commandName === 'dm') {
-      if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: '❌ Owner only.', ephemeral: true });
+      if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: '❌ Owner only.', flags: MessageFlags.Ephemeral });
       const target = interaction.options.getUser('user');
       const msg = interaction.options.getString('message');
       await target.send(msg);
-      await interaction.reply({ content: `✅ DM sent to **${target.tag}**`, ephemeral: true });
+      await interaction.reply({ content: `✅ DM sent to **${target.tag}**`, flags: MessageFlags.Ephemeral });
     }
 
     else if (commandName === 'stats') {
@@ -1111,7 +1111,7 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     else if (commandName === 'announce') {
-      if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: '❌ This command is owner-only.', ephemeral: true });
+      if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: '❌ This command is owner-only.', flags: MessageFlags.Ephemeral });
       const channel = interaction.options.getChannel('channel');
       const title   = interaction.options.getString('title');
       const body    = interaction.options.getString('body');
@@ -1124,12 +1124,12 @@ client.on('interactionCreate', async (interaction) => {
           .setTimestamp()
           .setFooter({ text: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
       ]});
-      await interaction.reply({ content: `✅ Announcement posted in ${channel}.`, ephemeral: true });
+      await interaction.reply({ content: `✅ Announcement posted in ${channel}.`, flags: MessageFlags.Ephemeral });
     }
 
   } catch (err) {
     console.error(`[${commandName}] Error:`, err);
-    const reply = { content: `❌ Something went wrong: \`${err.message}\``, ephemeral: true };
+    const reply = { content: `❌ Something went wrong: \`${err.message}\``, flags: MessageFlags.Ephemeral };
     if (interaction.deferred || interaction.replied) interaction.editReply(reply).catch(() => {});
     else interaction.reply(reply).catch(() => {});
   }
