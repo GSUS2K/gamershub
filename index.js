@@ -1,5 +1,12 @@
 require('dotenv').config();
 
+// const http = require('http');
+// http.createServer((req, res) => res.end('Bot is running!')).listen(process.env.PORT || 3000);
+
+// setInterval(() => {
+//   fetch(`https://gamershub-nood.onrender.com`).catch(() => {});
+// }, 14 * 60 * 1000);
+
 const mongoose = require('mongoose');
 
 mongoose.connect(process.env.MONGODB_URI)
