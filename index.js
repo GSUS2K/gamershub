@@ -329,6 +329,8 @@ const commands = [
   //     { name: 'JP', value: 'jp1' },
   //   )),
 
+  new SlashCommandBuilder().setName('unlink').setDescription('Unlink your Riot account from Discord'),
+
   new SlashCommandBuilder().setName('stats').setDescription('Look up a League of Legends player')
   .addUserOption(o => o.setName('user').setDescription('Mention a linked Discord user (optional)'))
   .addStringOption(o => o.setName('username').setDescription('Riot ID e.g. Name#TAG (optional if linked)'))
@@ -369,7 +371,7 @@ const commands = [
 ].map(c => c.toJSON());
 
 // ─── READY ────────────────────────────────────────────────────────────────────
-client.once('ready', async () => {
+client.once('clientReady', async () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
   // client.user.setActivity('your server 👀', { type: 3 }); // WATCHING
 
@@ -1108,6 +1110,13 @@ client.on('interactionCreate', async (interaction) => {
       } catch (err) {
         await interaction.editReply(`❌ Error fetching stats: ${err.message}`);
       }
+    }
+
+    else if (commandName === 'unlink') {
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      const deleted = await LinkedAccount.findOneAndDelete({ discordId: interaction.user.id });
+      if (!deleted) return interaction.editReply('❌ You don\'t have a linked account.');
+      await interaction.editReply('✅ Your Riot account has been unlinked. Use `/link` to link a new one.');
     }
 
     else if (commandName === 'announce') {
