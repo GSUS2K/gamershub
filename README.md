@@ -1,207 +1,141 @@
-# 🤖 Discord Bot — Full Feature Guide
+# Gamers Hub
 
-A feature-packed Discord bot with **AI chat**, **moderation**, **music**, **XP leveling**, **fun games**, **easter eggs**, and **owner DM relay**.
+A feature-rich Discord bot built with **discord.js** — packed with AI chat, League of Legends stats, moderation, music, XP leveling, fun games, and easter eggs.
 
 ---
 
-## 🚀 Quick Setup
+## ✨ Features
 
-### 1. Prerequisites
-- **Node.js v18+** — https://nodejs.org
-- **FFmpeg** — Required for music playback
-  - Windows: Download from https://ffmpeg.org/download.html and add to PATH
-  - Mac: `brew install ffmpeg`
-  - Linux: `sudo apt install ffmpeg`
+- 🤖 **AI Chat** — Powered by Groq (Llama 3.3 70B) — ask questions, generate stories, roasts, debates and more
+- 🎮 **League of Legends** — `/stats`, `/link`, `/champion`, `/tilt`, `/tierlist`, `/excuse` + LoL easter eggs
+- 🛡️ **Moderation** — kick, ban, warn, mute, purge with warning history
+- 🎵 **Music** — YouTube playback with queue, skip, pause, resume
+- 📊 **XP Leveling** — auto XP on every message, level-up announcements, leaderboard
+- 🎲 **Fun Commands** — 8ball, coinflip, trivia, would you rather, meme, joke, ship, rps, poll
+- 🥚 **Easter Eggs** — 30+ triggers including LoL-specific responses
+- 📩 **DM Relay** — DMs to the bot get forwarded to the owner
+- 👑 **Owner Commands** — relay messages, announcements
 
-### 2. Create Your Discord Bot
-1. Go to https://discord.com/developers/applications
-2. Click **New Application** → give it a name
-3. Go to **Bot** → **Reset Token** → copy the token
-4. Under **Privileged Gateway Intents**, enable:
-   - ✅ Server Members Intent
-   - ✅ Message Content Intent
-5. Go to **OAuth2 → URL Generator**
-   - Scopes: `bot`, `applications.commands`
-   - Bot Permissions: `Administrator` (or select individually)
-6. Open the generated URL and invite the bot to your server
+---
 
-### 3. Install & Configure
+## 🚀 Setup
+
+### Prerequisites
+- Node.js v18+
+- FFmpeg (for music)
+
+### Installation
 ```bash
-# Clone or download this folder, then:
-cd discord-bot
-
-# Install dependencies
+git clone https://github.com/yourusername/your-repo.git
+cd your-repo
 npm install
-
-# Copy the example env file
 cp .env.example .env
-
-# Edit .env with your values
-nano .env   # or open in any text editor
 ```
 
-Fill in your `.env`:
+Fill in `.env`:
 ```
-DISCORD_TOKEN=your_token_here
-ANTHROPIC_API_KEY=your_key_here
-OWNER_ID=your_discord_user_id_here
+DISCORD_TOKEN=
+GROQ_API_KEY=
+RIOT_API_KEY=
+MONGODB_URI=
+OWNER_ID=
+CLIENT_ID=
 ```
 
-> 💡 To get your User ID: Enable Developer Mode in Discord (Settings → Advanced), then right-click your name → Copy User ID
-
-### 4. Run the Bot
 ```bash
-npm start
-# or for auto-restart on file changes:
-npm run dev
+node index.js
 ```
 
 ---
 
-## 📋 All Commands
+## 📋 Commands
 
-### 🤖 AI (Powered by Claude)
+### 🤖 AI
 | Command | Description |
 |---------|-------------|
-| `/ask <question>` | Ask Claude AI anything — general knowledge, coding, creative writing |
-| `/roast @user` | AI roasts someone in a playful, comedy-roast style |
-| `/story <prompt>` | AI writes a fun micro-story from your idea |
-| `/vibe` | AI checks your vibe with a random result |
-| `/debate <topic> <for/against>` | AI argues either side of any topic |
+| `/ask` | Ask the AI anything |
+| `/roast @user` | Roast someone |
+| `/story` | Generate a micro-story |
+| `/vibe` | Check your vibe |
+| `/debate` | AI argues any topic |
+
+### 🎮 League of Legends
+| Command | Description |
+|---------|-------------|
+| `/stats` | Look up a player's rank and recent match |
+| `/link` | Link your Riot ID to your Discord |
+| `/champion` | Get a champion recommendation based on your mood |
+| `/tilt` | Check your tilt level |
+| `/tierlist` | Generate a chaotic tier list |
+| `/excuse` | Generate a loss excuse |
 
 ### 🛡️ Moderation
-| Command | Description | Permission Required |
-|---------|-------------|---------------------|
-| `/kick @user [reason]` | Kick a member | Kick Members |
-| `/ban @user [reason]` | Ban a member | Ban Members |
-| `/warn @user <reason>` | Warn a member (stored, DM sent) | Moderate Members |
-| `/warnings @user` | View all warnings for a user | Moderate Members |
-| `/clearwarnings @user` | Clear all warnings | Moderate Members |
-| `/mute @user <minutes> [reason]` | Timeout a member | Moderate Members |
-| `/purge <amount>` | Delete 1–100 messages | Manage Messages |
-
-### 🎮 Fun & Games
 | Command | Description |
 |---------|-------------|
-| `/roll [sides]` | Roll a dice (default d6, supports up to d1,000,000) |
-| `/8ball <question>` | Ask the magic 8-ball |
-| `/coinflip` | Flip a coin |
-| `/joke` | Random joke (SFW) |
-| `/meme` | Random meme from Reddit |
-| `/ship @user1 @user2` | Check compatibility % (deterministic per pair) |
-| `/trivia` | Trivia question — type A/B/C/D in chat to answer |
-| `/wouldyourather` | Random WYR question with reactions |
-| `/fact` | Random interesting fact |
-| `/rps <rock/paper/scissors>` | Play Rock Paper Scissors vs the bot |
-| `/poll <question> [options]` | Create a poll (separate options with `\|`) |
-
-### 📊 XP & Leveling
-| Command | Description |
-|---------|-------------|
-| `/rank` | View your XP and current level |
-| `/leaderboard` | Top 10 XP earners in the server |
-
-> XP is earned automatically by chatting (15–25 XP per message). Correct trivia answers give bonus XP!
+| `/kick` | Kick a member |
+| `/ban` | Ban a member |
+| `/warn` | Warn a member |
+| `/warnings` | View warnings for a user |
+| `/clearwarnings` | Clear all warnings |
+| `/mute` | Timeout a member |
+| `/purge` | Bulk delete messages |
 
 ### 🎵 Music
 | Command | Description |
 |---------|-------------|
-| `/play <song name or URL>` | Play a song (YouTube search or direct URL) |
-| `/skip` | Skip the current song |
-| `/stop` | Stop music and clear queue |
-| `/queue` | Show the current queue |
-| `/nowplaying` | Show current song info |
+| `/play` | Play a song from YouTube |
+| `/skip` | Skip current song |
+| `/stop` | Stop and clear queue |
+| `/queue` | View the queue |
+| `/nowplaying` | Current song info |
 | `/pause` | Pause playback |
 | `/resume` | Resume playback |
 
-> The bot auto-disconnects after 30 seconds if left alone in a voice channel.
-
-### 👑 Owner-Only
+### 🎮 Fun
 | Command | Description |
 |---------|-------------|
-| `/relay #channel <message>` | Send a message as the bot to any channel |
-| `/announce #channel <title> <body> [color]` | Post a styled embed announcement |
+| `/roll` | Roll a dice |
+| `/8ball` | Magic 8-ball |
+| `/coinflip` | Flip a coin |
+| `/joke` | Random joke |
+| `/meme` | Random meme |
+| `/ship` | Compatibility checker |
+| `/trivia` | Trivia question |
+| `/wouldyourather` | Would you rather |
+| `/fact` | Random fact |
+| `/rps` | Rock paper scissors |
+| `/poll` | Create a poll |
 
-### 📩 DM Relay System
-Anyone who DMs the bot will have their message forwarded to you (the owner) as an embed.
+### 📊 XP
+| Command | Description |
+|---------|-------------|
+| `/rank` | Your XP and level |
+| `/leaderboard` | Top 10 server XP |
 
-**To reply**, DM the bot:
-```
-reply 123456789012345678 Hey, thanks for reaching out!
-```
-Replace the number with the user's Discord ID (shown in the forwarded embed).
-
----
-
-## 🥚 Easter Eggs
-The bot responds to these messages (try them!):
-
-| Message | Response |
-|---------|----------|
-| `good bot` | Appreciation responses |
-| `bad bot` | Sad bot noises 😢 |
-| `amogus` / `sus` | ASCII crewmate |
-| `ratio` | Counter-ratio storm |
-| `skill issue` | Snarky comeback |
-| `ping` | Pong + latency |
-| `69` | nice |
-| `420` | 🍃 |
-| `the game` | You just lost The Game |
-| `gm` / `good morning` | Morning greeting |
-| `gn` / `good night` | Night message |
-| `f` | F 🪦 |
-| `im bored` | Command suggestions |
-| `bot go brrr` | BRRR |
-| `hello darkness my old friend` | ... |
-| @mention the bot | Random response |
-| Any long message (2% chance) | Random commentary |
+### 👑 Owner
+| Command | Description |
+|---------|-------------|
+| `/relay` | Send a message as the bot |
+| `/announce` | Post a styled announcement |
+| `/dm` | DM a user as the bot |
 
 ---
 
-## 🔧 Customization Tips
+## 🔑 API Keys
 
-**Add custom easter eggs** — find the Easter Eggs section in `index.js` and add:
-```js
-if (c === 'your trigger phrase') {
-  return message.reply('your response');
-}
-```
-
-**Change bot status** — find `setActivity` in the `ready` event:
-```js
-client.user.setActivity('your custom status', { type: 3 }); // 0=Playing, 1=Streaming, 2=Listening, 3=Watching, 5=Competing
-```
-
-**Faster command registration** (during development) — replace `Routes.applicationCommands` with:
-```js
-Routes.applicationGuildCommands(client.user.id, 'YOUR_GUILD_ID')
-```
-This registers commands instantly for one server instead of waiting up to 1 hour for global propagation.
-
-**Persistent data** — Currently, warnings and XP are stored in memory and reset when the bot restarts. For persistence, swap the `Map()` stores with SQLite (using `better-sqlite3`) or a JSON file.
+| Key | Where to get |
+|-----|-------------|
+| `DISCORD_TOKEN` | https://discord.com/developers/applications |
+| `GROQ_API_KEY` | https://console.groq.com |
+| `RIOT_API_KEY` | https://developer.riotgames.com |
+| `MONGODB_URI` | https://cloud.mongodb.com |
 
 ---
 
-## 🐛 Troubleshooting
+## 🛠️ Built With
 
-**Music not working?**
-- Make sure FFmpeg is installed and in your PATH
-- Try `ffmpeg -version` in terminal to verify
-- `@discordjs/opus` and `sodium-native` may need build tools: `npm install --build-from-source`
-
-**Commands not showing up?**
-- Global slash commands can take up to 1 hour to appear
-- Use guild commands during testing for instant registration
-
-**`sodium-native` build error?**
-- Windows: Install [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/)
-- Linux: `sudo apt install build-essential python3`
-- Mac: `xcode-select --install`
-
-**Bot can't DM a user?**
-- User may have DMs disabled from server members. Nothing can be done about this.
-
----
-
-## 📄 License
-Do whatever you want with this. It's yours! 🎉
+- [discord.js](https://discord.js.org) v14
+- [Groq SDK](https://console.groq.com) — Llama 3.3 70B
+- [Riot Games API](https://developer.riotgames.com)
+- [MongoDB](https://www.mongodb.com) + Mongoose
+- [@discordjs/voice](https://github.com/discordjs/voice) + play-dl
