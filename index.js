@@ -649,15 +649,32 @@ client.on('interactionCreate', async (interaction) => {
   // await interaction.reply({ content: `✅ Linked **${riotId}** (${region.toUpperCase()}) to your Discord!`, ephemeral: true });
   // }
 
+    // else if (commandName === 'link') {
+    //   const riotId = interaction.options.getString('riotid');
+    //   const region = interaction.options.getString('region');
+    //   await LinkedAccount.findOneAndUpdate(
+    //     { discordId: interaction.user.id },
+    //     { riotId, region },
+    //     { upsert: true }
+    //   );
+    //   await interaction.reply({ content: `✅ Linked **${riotId}** (${region.toUpperCase()}) to your Discord!`, ephemeral: true });
+    // }
+
     else if (commandName === 'link') {
-      const riotId = interaction.options.getString('riotid');
-      const region = interaction.options.getString('region');
-      await LinkedAccount.findOneAndUpdate(
-        { discordId: interaction.user.id },
-        { riotId, region },
-        { upsert: true }
-      );
-      await interaction.reply({ content: `✅ Linked **${riotId}** (${region.toUpperCase()}) to your Discord!`, ephemeral: true });
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const riotId = interaction.options.getString('riotid');
+        const region = interaction.options.getString('region');
+        await LinkedAccount.findOneAndUpdate(
+          { discordId: interaction.user.id },
+          { riotId, region },
+          { upsert: true, new: true }
+        );
+        await interaction.editReply(`✅ Linked **${riotId}** (${region.toUpperCase()}) to your Discord!`);
+      } catch (err) {
+        console.error('Link error:', err);
+        await interaction.editReply('❌ Failed to link account. Check MongoDB connection.');
+      }
     }
 
     else if (commandName === 'meme') {
