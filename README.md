@@ -7,7 +7,7 @@ A feature-rich Discord bot built with **discord.js** — packed with AI chat, Le
 ## ✨ Features
 
 - 🤖 **AI Chat** — Powered by Groq (Llama 3.3 70B) — ask questions, generate stories, roasts, debates and more
-- 🎮 **League of Legends** — `/stats`, `/link`, `/champion`, `/tilt`, `/tierlist`, `/excuse` + LoL easter eggs
+- 🎮 **League of Legends** — `/stats`, `/link`, `/unlink`, `/champion`, `/tilt`, `/tierlist`, `/excuse` + LoL easter eggs
 - 🛡️ **Moderation** — kick, ban, warn, mute, purge with warning history
 - 🎵 **Music** — YouTube playback with queue, skip, pause, resume
 - 📊 **XP Leveling** — auto XP on every message, level-up announcements, leaderboard
@@ -64,6 +64,7 @@ node index.js
 |---------|-------------|
 | `/stats` | Look up a player's rank and recent match |
 | `/link` | Link your Riot ID to your Discord |
+| `/unlink` | Unlink your Riot ID from your Discord |
 | `/champion` | Get a champion recommendation based on your mood |
 | `/tilt` | Check your tilt level |
 | `/tierlist` | Generate a chaotic tier list |
