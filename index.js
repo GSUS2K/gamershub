@@ -385,7 +385,7 @@ client.once('clientReady', async () => {
   const statuses = [
   { name: 'League of Legends', type: 0 },
   { name: 'you int', type: 3 },
-  { name: 'to you have been slain!', type: 2 },
+  { name: 'you have been slain!', type: 2 },
   { name: 'you run it down mid', type: 3 }
   ];
 
@@ -1173,7 +1173,8 @@ client.on('messageCreate', async (message) => {
             .setThumbnail(message.author.displayAvatarURL())
             .setTimestamp()
         ]});
-        await message.reply('📨 Your message has been forwarded to the server owner! They\'ll get back to you soon.');
+        // await message.reply('📨 Your message has been forwarded to the server owner! They\'ll get back to you soon.');
+        await message.reply('');
       } catch (e) {
         console.error('DM relay error:', e);
       }
@@ -1184,7 +1185,8 @@ client.on('messageCreate', async (message) => {
         const [, userId, replyText] = match;
         try {
           const user = await client.users.fetch(userId);
-          await user.send(`💬 **Message from the server owner:**\n${replyText}`);
+          // await user.send(`💬 **Message from the server owner:**\n${replyText}`);
+          await user.send(`${replyText}`);
           await message.reply(`✅ Replied to **${user.tag}**`);
         } catch {
           await message.reply('❌ Could not send message to that user. Check the ID?');
