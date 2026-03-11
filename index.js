@@ -35,7 +35,7 @@ const Warning = mongoose.model('Warning', new mongoose.Schema({
 
 const {
   Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes,
-  EmbedBuilder, PermissionFlagsBits, MessageFlags
+  EmbedBuilder, PermissionFlagsBits, MessageFlags, Partials
 } = require('discord.js');
 const {
   joinVoiceChannel, createAudioPlayer, createAudioResource,
@@ -55,7 +55,14 @@ const client = new Client({
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.GuildMembers,
   ],
-  partials: ['Message', 'Channel', 'Reaction']
+  // partials: ['Message', 'Channel', 'Reaction']
+  partials: [
+    Partials.Message,
+    Partials.Channel,
+    Partials.Reaction,
+    Partials.User,
+    Partials.GuildMember,
+  ]
 });
 
 // const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
