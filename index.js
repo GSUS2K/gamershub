@@ -1152,6 +1152,7 @@ client.on('messageCreate', async (message) => {
 
   // ── DM Relay ──────────────────────────────────────────────────────────────
   if (!message.guild) {
+      console.log('DM received from:', message.author.tag, '| Owner ID:', OWNER_ID);
     if (message.author.id !== OWNER_ID) {
       // Forward DM to owner
       try {
