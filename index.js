@@ -380,6 +380,11 @@ const commands = [
 
 ].map(c => c.toJSON());
 
+  // BS
+
+  new SlashCommandBuilder().setName('brawl').setDescription('Look up a Brawl Stars player')
+    .addStringOption(o => o.setName('tag').setDescription('Player tag e.g. #ABC123').setRequired(true)),
+
 // ─── READY ────────────────────────────────────────────────────────────────────
 client.once('clientReady', async () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
@@ -866,6 +871,44 @@ client.on('interactionCreate', async (interaction) => {
       for (const emoji of emojis) await msg.react(emoji);
     }
 
+    else if (commandName === 'brawl') {
+  await interaction.deferReply();
+  const BRAWL_KEY = process.env.BRAWL_API_KEY;
+  let tag = interaction.options.getString('tag').trim().replace('#', '').toUpperCase();
+
+  try {
+    const res = await fetch(`https://api.brawlstars.com/v1/players/%23${tag}`, {
+      headers: { Authorization: `Bearer ${BRAWL_KEY}` }
+    });
+
+    if (!res.ok) return interaction.editReply('❌ Player not found. Check the tag and try again.');
+    const p = await res.json();
+
+    const brawlers = p.brawlers.sort((a, b) => b.trophies - a.trophies).slice(0, 3)
+      .map(b => `**${b.name}** — 🏆 ${b.trophies} (Rank ${b.rank})`).join('\n');
+
+    await interaction.editReply({ embeds: [
+      new EmbedBuilder()
+        .setColor('#FF6B35')
+        .setTitle(`🎮 ${p.name} (${p.tag})`)
+        .addFields(
+          { name: '🏆 Trophies', value: `${p.trophies.toLocaleString()}`, inline: true },
+          { name: '🏅 Highest', value: `${p.highestTrophies.toLocaleString()}`, inline: true },
+          { name: '🎯 3v3 Wins', value: `${p['3vs3Victories'].toLocaleString()}`, inline: true },
+          { name: '⚔️ Solo Wins', value: `${p.soloVictories.toLocaleString()}`, inline: true },
+          { name: '👥 Duo Wins', value: `${p.duoVictories.toLocaleString()}`, inline: true },
+          { name: '🤖 Brawlers', value: `${p.brawlers.length}`, inline: true },
+          { name: '🌟 Top 3 Brawlers', value: brawlers, inline: false },
+          { name: '🏠 Club', value: p.club?.name || 'No club', inline: true },
+        )
+        .setFooter({ text: 'Brawl Stars Stats' })
+        .setTimestamp()
+    ]});
+      } catch (err) {
+        console.error('Brawl error:', err);
+        await interaction.editReply(`❌ Error: ${err.message}`);
+      }
+    }
 
     // ════════════════════════════════════════════
     //                   MUSIC
