@@ -406,6 +406,12 @@ const commands = [
 
 // ─── READY ────────────────────────────────────────────────────────────────────
 client.once('clientReady', async () => {
+  const { execSync } = require('child_process');
+    try {
+      console.log('FFmpeg:', execSync('ffmpeg -version').toString().split('\n')[0]);
+    } catch {
+      console.log('FFmpeg not found!');
+    }
   await player.extractors.loadMulti(DefaultExtractors);
   console.log('✅ Music extractors loaded');
   console.log(`✅ Logged in as ${client.user.tag}`);
