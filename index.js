@@ -75,6 +75,7 @@ const musicQueues = new Map(); // guildId → { connection, player, songs, curre
 const xpData      = new Map(); // `${guildId}-${userId}` → { xp, level }
 const triviaActive= new Map(); // channelId → { answer, correct, question }
 const linkedAccounts = new Map();
+const lastMessages = new Map();
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const EIGHT_BALL = [
@@ -293,6 +294,8 @@ const commands = [
     .addStringOption(o => o.setName('question').setDescription('Poll question').setRequired(true))
     .addStringOption(o => o.setName('options').setDescription('Options separated by | e.g. "Option A | Option B | Option C"')),
 
+    new SlashCommandBuilder().setName('tldr').setDescription('Summarize the last 20 messages in this channel'),
+
   // ── MUSIC ──
   new SlashCommandBuilder().setName('play').setDescription('Play a song 🎵')
     .addStringOption(o => o.setName('query').setDescription('Song name or YouTube URL').setRequired(true)),
@@ -457,6 +460,18 @@ client.on('interactionCreate', async (interaction) => {
         mkEmbed('#f1c40f', `📖 ${prompt.slice(0,100)}`, story)
           .setFooter({ text: `Story by Groq ✨ | Prompted by ${interaction.user.username}` })
       ]});
+    }
+
+    else if (commandName === 'tldr') {
+      await interaction.deferReply();
+      const messages = await interaction.channel.messages.fetch({ limit: 20 });
+      const transcript = messages.reverse().map(m => `${m.author.username}: ${m.content}`).filter(m => !m.includes(': ')).join('\n') ||
+        messages.reverse().map(m => `${m.author.username}: ${m.content}`).join('\n');
+      const summary = await askGroq(
+        `Summarize this Discord conversation in 2-3 sentences, casual tone:\n\n${transcript}`,
+        'You are a Discord bot that summarizes conversations briefly and casually.'
+      );
+      await interaction.editReply({ embeds: [mkEmbed('#3498db', '📝 TL;DR', summary)] });
     }
 
     else if (commandName === 'vibe') {
@@ -1223,6 +1238,39 @@ client.on('messageCreate', async (message) => {
     ];
     message.channel.send(msgs[Math.floor(Math.random() * msgs.length)]);
   }
+
+  // ── Solitude AI Chat ──────────────────────────────────────────────────────
+if (message.channel.name === 'solitude') {
+  await message.channel.sendTyping();
+    try {
+      const recent = await message.channel.messages.fetch({ limit: 10 });
+      const history = recent.reverse().map(m => ({
+        role: m.author.bot ? 'assistant' : 'user',
+        content: m.content
+      })).filter(m => m.content);
+
+      const reply = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 500,
+        messages: [
+          { role: 'system', content: 'You are a chill, witty Discord bot chatting one-on-one with a user in a private channel. Be conversational, funny, and engaging. Keep replies concise — 1-3 sentences usually. Never break character.' },
+          ...history
+        ]
+      });
+
+      await message.reply(reply.choices[0].message.content);
+    } catch (err) {
+      console.error('Solitude error:', err);
+    }
+    return;
+  }
+  
+  const lastMsg = lastMessages.get(message.author.id);
+  if (lastMsg && lastMsg === message.content && message.content.length > 3) {
+    lastMessages.set(message.author.id, null);
+    return message.reply('ok we get it bro 🎃 no need to say it twice');
+  }
+  lastMessages.set(message.author.id, message.content);
 
   // ── Easter Eggs ───────────────────────────────────────────────────────────
   const c = message.content.toLowerCase().trim();
