@@ -395,14 +395,14 @@ const commands = [
       { name: 'LAN', value: 'la1' },
       { name: 'LAS', value: 'la2' },
       { name: 'RU', value: 'ru' },
-    ))
+    )),
 
-].map(c => c.toJSON());
-
-  // BS
+     // BS
 
   new SlashCommandBuilder().setName('brawl').setDescription('Look up a Brawl Stars player')
     .addStringOption(o => o.setName('tag').setDescription('Player tag e.g. #ABC123').setRequired(true)),
+
+].map(c => c.toJSON());
 
 // ─── READY ────────────────────────────────────────────────────────────────────
 client.once('clientReady', async () => {
