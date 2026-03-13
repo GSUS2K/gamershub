@@ -907,10 +907,10 @@ client.on('interactionCreate', async (interaction) => {
     const res = await fetch(`https://api.brawlstars.com/v1/players/%23${tag}`, {
       headers: { Authorization: `Bearer ${BRAWL_KEY}` }
     });
-
+    console.log('Brawl status:', res.status);
     if (!res.ok) return interaction.editReply('❌ Player not found. Check the tag and try again.');
     const p = await res.json();
-
+    console.log('Brawl response:', p);
     const brawlers = p.brawlers.sort((a, b) => b.trophies - a.trophies).slice(0, 3)
       .map(b => `**${b.name}** — 🏆 ${b.trophies} (Rank ${b.rank})`).join('\n');
 
