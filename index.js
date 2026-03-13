@@ -465,8 +465,11 @@ client.on('interactionCreate', async (interaction) => {
     else if (commandName === 'tldr') {
       await interaction.deferReply();
       const messages = await interaction.channel.messages.fetch({ limit: 20 });
-      const transcript = messages.reverse().map(m => `${m.author.username}: ${m.content}`).filter(m => !m.includes(': ')).join('\n') ||
-        messages.reverse().map(m => `${m.author.username}: ${m.content}`).join('\n');
+      const transcript = messages
+        .filter(m => !m.author.bot && m.content)
+        .map(m => `${m.author.username}: ${m.content}`)
+        .reverse()
+        .join('\n');
       const summary = await askGroq(
         `Summarize this Discord conversation in 2-3 sentences, casual tone:\n\n${transcript}`,
         'You are a Discord bot that summarizes conversations briefly and casually.'
