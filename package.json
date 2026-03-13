@@ -4,7 +4,7 @@
   "description": "A feature-rich Discord bot with AI, moderation, music, XP, easter eggs & more",
   "main": "index.js",
   "scripts": {
-    "start": "node --max-old-space-size=512 index.js",
+    "start": "node --max-old-space-size=768 index.js",
     "dev": "nodemon index.js"
   },
   "dependencies": {

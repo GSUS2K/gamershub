@@ -1012,8 +1012,18 @@ client.on('interactionCreate', async (interaction) => {
       if (!voiceChannel) return interaction.reply({ content: '❌ Join a voice channel first!', flags: MessageFlags.Ephemeral });
       await interaction.deferReply();
       try {
+        // const { track } = await player.play(voiceChannel, query, {
+        //   nodeOptions: { metadata: { channel: interaction.channel } }
+        // });
         const { track } = await player.play(voiceChannel, query, {
-          nodeOptions: { metadata: { channel: interaction.channel } }
+          nodeOptions: {
+            metadata: { channel: interaction.channel },
+            bufferingTimeout: 3000,
+            streamConfig: {
+              useFFmpeg: true,
+              filters: { ffmpeg: { args: ['-af', 'aresample=48000'] } }
+            }
+          }
         });
         await interaction.editReply({ embeds: [mkEmbed('#1db954', '🎵 Added to Queue', `**${track.title}**\nDuration: \`${track.duration}\` | By: **${track.author}**`)] });
       } catch (err) {
