@@ -79,6 +79,10 @@ player.events.on('playerStart', (queue, track) => {
 player.events.on('emptyQueue', (queue) => {
   queue.metadata.channel.send('✅ Queue finished!');
 });
+player.events.on('playerError', (queue, error) => {
+  console.error('Player error:', error);
+  queue.metadata.channel.send(`❌ Player error: ${error.message}`);
+});
 player.events.on('error', (queue, error) => {
   console.error('Player error:', error);
   queue.metadata.channel.send(`❌ Error: ${error.message}`);
@@ -406,6 +410,11 @@ const commands = [
 
 // ─── READY ────────────────────────────────────────────────────────────────────
 client.once('clientReady', async () => {
+
+  const ipRes = await fetch('https://api.ipify.org?format=json');
+  const ipData = await ipRes.json();
+  console.log('Outbound IP:', ipData.ip);
+
   const { execSync } = require('child_process');
     try {
       console.log('FFmpeg:', execSync('ffmpeg -version').toString().split('\n')[0]);
