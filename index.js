@@ -37,11 +37,13 @@ const {
   Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes,
   EmbedBuilder, PermissionFlagsBits, MessageFlags, Partials
 } = require('discord.js');
-const {
-  joinVoiceChannel, createAudioPlayer, createAudioResource,
-  AudioPlayerStatus, getVoiceConnection
-} = require('@discordjs/voice');
-const playdl = require('play-dl');
+
+// const {
+//   joinVoiceChannel, createAudioPlayer, createAudioResource,
+//   AudioPlayerStatus, getVoiceConnection
+// } = require('@discordjs/voice');
+// const playdl = require('play-dl');
+
 // const Anthropic = require('@anthropic-ai/sdk');
 const Groq = require('groq-sdk');
 
@@ -65,13 +67,28 @@ const client = new Client({
   ]
 });
 
+const { Player } = require('discord-player');
+const { DefaultExtractors } = require('@discord-player/extractor');
+const player = new Player(client);
+
+player.events.on('playerStart', (queue, track) => {
+  queue.metadata.channel.send({ embeds: [mkEmbed('#1db954', '🎵 Now Playing', `**${track.title}**\nBy: **${track.author}** | Duration: \`${track.duration}\``)] });
+});
+player.events.on('emptyQueue', (queue) => {
+  queue.metadata.channel.send('✅ Queue finished!');
+});
+player.events.on('error', (queue, error) => {
+  console.error('Player error:', error);
+  queue.metadata.channel.send(`❌ Error: ${error.message}`);
+});
+
 // const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const OWNER_ID = process.env.OWNER_ID;
 
 // ─── DATA STORES (use a real DB like SQLite for persistence) ──────────────────
 const warnings    = new Map(); // `${guildId}-${userId}` → [{ reason, date, mod }]
-const musicQueues = new Map(); // guildId → { connection, player, songs, current, textChannel }
+// const musicQueues = new Map(); // guildId → { connection, player, songs, current, textChannel }
 const xpData      = new Map(); // `${guildId}-${userId}` → { xp, level }
 const triviaActive= new Map(); // channelId → { answer, correct, question }
 const linkedAccounts = new Map();
@@ -174,27 +191,27 @@ function decode(str) {
 }
 
 // ─── MUSIC ────────────────────────────────────────────────────────────────────
-function getQueue(guildId) { return musicQueues.get(guildId); }
+// function getQueue(guildId) { return musicQueues.get(guildId); }
 
-async function playNext(guildId) {
-  const q = getQueue(guildId);
-  if (!q || q.songs.length === 0) {
-    if (q) { q.current = null; q.textChannel.send('✅ Queue finished! Add more songs with `/play`.'); }
-    musicQueues.delete(guildId);
-    return;
-  }
-  const song = q.songs.shift();
-  q.current = song;
-  try {
-    const stream = await playdl.stream(song.url);
-    const resource = createAudioResource(stream.stream, { inputType: stream.type });
-    q.player.play(resource);
-    q.textChannel.send({ embeds: [mkEmbed('#1db954','🎵 Now Playing',`**${song.title}**\nDuration: \`${song.duration}\` | Requested by: **${song.requester}**`)] });
-  } catch (err) {
-    q.textChannel.send(`❌ Error playing **${song.title}**: ${err.message}. Skipping...`);
-    playNext(guildId);
-  }
-}
+// async function playNext(guildId) {
+//   const q = getQueue(guildId);
+//   if (!q || q.songs.length === 0) {
+//     if (q) { q.current = null; q.textChannel.send('✅ Queue finished! Add more songs with `/play`.'); }
+//     musicQueues.delete(guildId);
+//     return;
+//   }
+//   const song = q.songs.shift();
+//   q.current = song;
+//   try {
+//     const stream = await playdl.stream(song.url);
+//     const resource = createAudioResource(stream.stream, { inputType: stream.type });
+//     q.player.play(resource);
+//     q.textChannel.send({ embeds: [mkEmbed('#1db954','🎵 Now Playing',`**${song.title}**\nDuration: \`${song.duration}\` | Requested by: **${song.requester}**`)] });
+//   } catch (err) {
+//     q.textChannel.send(`❌ Error playing **${song.title}**: ${err.message}. Skipping...`);
+//     playNext(guildId);
+//   }
+// }
 
 // ─── SLASH COMMAND DEFINITIONS ────────────────────────────────────────────────
 const commands = [
@@ -387,6 +404,8 @@ const commands = [
 
 // ─── READY ────────────────────────────────────────────────────────────────────
 client.once('clientReady', async () => {
+  await player.extractors.loadMulti(DefaultExtractors);
+  console.log('✅ Music extractors loaded');
   console.log(`✅ Logged in as ${client.user.tag}`);
   // client.user.setActivity('your server 👀', { type: 3 }); // WATCHING
 
@@ -914,109 +933,171 @@ client.on('interactionCreate', async (interaction) => {
     //                   MUSIC
     // ════════════════════════════════════════════
 
+    // else if (commandName === 'play') {
+    //   const query = interaction.options.getString('query');
+    //   const voiceChannel = interaction.member.voice?.channel;
+    //   if (!voiceChannel) return interaction.reply({ content: '❌ You need to be in a voice channel first!', flags: MessageFlags.Ephemeral });
+    //   const perms = voiceChannel.permissionsFor(interaction.guild.members.me);
+    //   if (!perms?.has(['Connect','Speak'])) return interaction.reply({ content: "❌ I don't have permission to join/speak in that channel.", flags: MessageFlags.Ephemeral });
+
+    //   await interaction.deferReply();
+
+    //   try {
+    //     let songInfo;
+    //     const validated = playdl.yt_validate(query);
+    //     if (validated === 'video') {
+    //       const info = await playdl.video_info(query);
+    //       const v = info.video_details;
+    //       songInfo = { title: v.title, url: query, duration: v.durationRaw || '??:??', requester: interaction.user.username };
+    //     } else {
+    //       const results = await playdl.search(query, { source: { youtube: 'video' }, limit: 1 });
+    //       if (!results.length) return interaction.editReply('❌ No results found for that query.');
+    //       songInfo = { title: results[0].title, url: results[0].url, duration: results[0].durationRaw || '??:??', requester: interaction.user.username };
+    //     }
+
+    //     let q = musicQueues.get(interaction.guildId);
+    //     if (!q) {
+    //       const connection = joinVoiceChannel({
+    //         channelId: voiceChannel.id,
+    //         guildId: interaction.guildId,
+    //         adapterCreator: interaction.guild.voiceAdapterCreator,
+    //       });
+    //       const player = createAudioPlayer();
+    //       connection.subscribe(player);
+    //       const guildId = interaction.guildId;
+    //       q = { connection, player, songs: [], current: null, textChannel: interaction.channel };
+    //       musicQueues.set(guildId, q);
+    //       player.on(AudioPlayerStatus.Idle, () => playNext(guildId));
+    //       player.on('error', err => {
+    //         console.error('Player error:', err);
+    //         q.textChannel.send(`⚠️ Playback error: ${err.message}`);
+    //       });
+    //     }
+
+    //     q.songs.push(songInfo);
+
+    //     if (q.current) {
+    //       await interaction.editReply({ embeds: [mkEmbed('#1db954','➕ Added to Queue',
+    //         `**${songInfo.title}**\nDuration: \`${songInfo.duration}\` | Position: **#${q.songs.length}**`
+    //       )]});
+    //     } else {
+    //       await interaction.editReply({ embeds: [mkEmbed('#1db954','🔍 Loading track...',`**${songInfo.title}**`)] });
+    //       playNext(interaction.guildId);
+    //     }
+    //   } catch (err) {
+    //     await interaction.editReply(`❌ Error: ${err.message}`);
+    //   }
+    // }
+
     else if (commandName === 'play') {
       const query = interaction.options.getString('query');
       const voiceChannel = interaction.member.voice?.channel;
-      if (!voiceChannel) return interaction.reply({ content: '❌ You need to be in a voice channel first!', flags: MessageFlags.Ephemeral });
-      const perms = voiceChannel.permissionsFor(interaction.guild.members.me);
-      if (!perms?.has(['Connect','Speak'])) return interaction.reply({ content: "❌ I don't have permission to join/speak in that channel.", flags: MessageFlags.Ephemeral });
-
+      if (!voiceChannel) return interaction.reply({ content: '❌ Join a voice channel first!', flags: MessageFlags.Ephemeral });
       await interaction.deferReply();
-
       try {
-        let songInfo;
-        const validated = playdl.yt_validate(query);
-        if (validated === 'video') {
-          const info = await playdl.video_info(query);
-          const v = info.video_details;
-          songInfo = { title: v.title, url: query, duration: v.durationRaw || '??:??', requester: interaction.user.username };
-        } else {
-          const results = await playdl.search(query, { source: { youtube: 'video' }, limit: 1 });
-          if (!results.length) return interaction.editReply('❌ No results found for that query.');
-          songInfo = { title: results[0].title, url: results[0].url, duration: results[0].durationRaw || '??:??', requester: interaction.user.username };
-        }
-
-        let q = musicQueues.get(interaction.guildId);
-        if (!q) {
-          const connection = joinVoiceChannel({
-            channelId: voiceChannel.id,
-            guildId: interaction.guildId,
-            adapterCreator: interaction.guild.voiceAdapterCreator,
-          });
-          const player = createAudioPlayer();
-          connection.subscribe(player);
-          const guildId = interaction.guildId;
-          q = { connection, player, songs: [], current: null, textChannel: interaction.channel };
-          musicQueues.set(guildId, q);
-          player.on(AudioPlayerStatus.Idle, () => playNext(guildId));
-          player.on('error', err => {
-            console.error('Player error:', err);
-            q.textChannel.send(`⚠️ Playback error: ${err.message}`);
-          });
-        }
-
-        q.songs.push(songInfo);
-
-        if (q.current) {
-          await interaction.editReply({ embeds: [mkEmbed('#1db954','➕ Added to Queue',
-            `**${songInfo.title}**\nDuration: \`${songInfo.duration}\` | Position: **#${q.songs.length}**`
-          )]});
-        } else {
-          await interaction.editReply({ embeds: [mkEmbed('#1db954','🔍 Loading track...',`**${songInfo.title}**`)] });
-          playNext(interaction.guildId);
-        }
+        const { track } = await player.play(voiceChannel, query, {
+          nodeOptions: { metadata: { channel: interaction.channel } }
+        });
+        await interaction.editReply({ embeds: [mkEmbed('#1db954', '🎵 Added to Queue', `**${track.title}**\nDuration: \`${track.duration}\` | By: **${track.author}**`)] });
       } catch (err) {
         await interaction.editReply(`❌ Error: ${err.message}`);
       }
     }
 
+    // else if (commandName === 'skip') {
+    //   const q = getQueue(interaction.guildId);
+    //   if (!q?.current) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
+    //   const skipped = q.current.title;
+    //   q.player.stop();
+    //   await interaction.reply({ embeds: [mkEmbed('#1db954','⏭️ Skipped', `**${skipped}**`)] });
+    // }
+
     else if (commandName === 'skip') {
-      const q = getQueue(interaction.guildId);
-      if (!q?.current) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
-      const skipped = q.current.title;
-      q.player.stop();
-      await interaction.reply({ embeds: [mkEmbed('#1db954','⏭️ Skipped', `**${skipped}**`)] });
+      const queue = player.nodes.get(interaction.guildId);
+      if (!queue?.isPlaying()) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
+      const track = queue.currentTrack;
+      queue.node.skip();
+      await interaction.reply({ embeds: [mkEmbed('#1db954', '⏭️ Skipped', `**${track.title}**`)] });
     }
+
+    // else if (commandName === 'stop') {
+    //   const q = getQueue(interaction.guildId);
+    //   if (!q) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
+    //   q.songs = [];
+    //   q.player.stop();
+    //   q.connection.destroy();
+    //   musicQueues.delete(interaction.guildId);
+    //   await interaction.reply({ embeds: [mkEmbed('#e74c3c','⏹️ Music Stopped', 'Queue cleared and disconnected from voice channel.')] });
+    // }
 
     else if (commandName === 'stop') {
-      const q = getQueue(interaction.guildId);
-      if (!q) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
-      q.songs = [];
-      q.player.stop();
-      q.connection.destroy();
-      musicQueues.delete(interaction.guildId);
-      await interaction.reply({ embeds: [mkEmbed('#e74c3c','⏹️ Music Stopped', 'Queue cleared and disconnected from voice channel.')] });
+      const queue = player.nodes.get(interaction.guildId);
+      if (!queue) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
+      queue.delete();
+      await interaction.reply({ embeds: [mkEmbed('#e74c3c', '⏹️ Stopped', 'Queue cleared and disconnected.')] });
     }
+
+    // else if (commandName === 'queue') {
+    //   const q = getQueue(interaction.guildId);
+    //   if (!q?.current && (!q?.songs || q.songs.length === 0)) return interaction.reply({ content: '❌ The queue is empty!', flags: MessageFlags.Ephemeral });
+    //   const lines = [];
+    //   if (q.current) lines.push(`▶️ **NOW:** ${q.current.title} \`[${q.current.duration}]\``);
+    //   q.songs.forEach((s, i) => lines.push(`**${i+1}.** ${s.title} \`[${s.duration}]\` — *${s.requester}*`));
+    //   await interaction.reply({ embeds: [mkEmbed('#1db954',`🎵 Queue (${q.songs.length} upcoming)`, lines.join('\n').slice(0, 4000))] });
+    // }
 
     else if (commandName === 'queue') {
-      const q = getQueue(interaction.guildId);
-      if (!q?.current && (!q?.songs || q.songs.length === 0)) return interaction.reply({ content: '❌ The queue is empty!', flags: MessageFlags.Ephemeral });
-      const lines = [];
-      if (q.current) lines.push(`▶️ **NOW:** ${q.current.title} \`[${q.current.duration}]\``);
-      q.songs.forEach((s, i) => lines.push(`**${i+1}.** ${s.title} \`[${s.duration}]\` — *${s.requester}*`));
-      await interaction.reply({ embeds: [mkEmbed('#1db954',`🎵 Queue (${q.songs.length} upcoming)`, lines.join('\n').slice(0, 4000))] });
+      const queue = player.nodes.get(interaction.guildId);
+      if (!queue?.isPlaying()) return interaction.reply({ content: '❌ Queue is empty!', flags: MessageFlags.Ephemeral });
+      const tracks = queue.tracks.toArray().slice(0, 10);
+      const current = queue.currentTrack;
+      const lines = [`▶️ **NOW:** ${current.title} \`[${current.duration}]\``];
+      tracks.forEach((t, i) => lines.push(`**${i+1}.** ${t.title} \`[${t.duration}]\``));
+      await interaction.reply({ embeds: [mkEmbed('#1db954', `🎵 Queue (${queue.tracks.size} upcoming)`, lines.join('\n'))] });
     }
+
+    // else if (commandName === 'nowplaying') {
+    //   const q = getQueue(interaction.guildId);
+    //   if (!q?.current) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
+    //   await interaction.reply({ embeds: [mkEmbed('#1db954','🎵 Now Playing',
+    //     `**${q.current.title}**\nDuration: \`${q.current.duration}\` | Requested by: **${q.current.requester}**`
+    //   )]});
+    // }
 
     else if (commandName === 'nowplaying') {
-      const q = getQueue(interaction.guildId);
-      if (!q?.current) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
-      await interaction.reply({ embeds: [mkEmbed('#1db954','🎵 Now Playing',
-        `**${q.current.title}**\nDuration: \`${q.current.duration}\` | Requested by: **${q.current.requester}**`
-      )]});
+      const queue = player.nodes.get(interaction.guildId);
+      if (!queue?.isPlaying()) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
+      const track = queue.currentTrack;
+      const progress = queue.node.createProgressBar();
+      await interaction.reply({ embeds: [mkEmbed('#1db954', '🎵 Now Playing', `**${track.title}**\nBy: **${track.author}**\n\n${progress}`)] });
     }
+
+    // else if (commandName === 'pause') {
+    //   const q = getQueue(interaction.guildId);
+    //   if (!q?.current) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
+    //   q.player.pause();
+    //   await interaction.reply({ embeds: [mkEmbed('#f39c12','⏸️ Paused', `**${q.current.title}** has been paused. Use \`/resume\` to continue.`)] });
+    // }
 
     else if (commandName === 'pause') {
-      const q = getQueue(interaction.guildId);
-      if (!q?.current) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
-      q.player.pause();
-      await interaction.reply({ embeds: [mkEmbed('#f39c12','⏸️ Paused', `**${q.current.title}** has been paused. Use \`/resume\` to continue.`)] });
+      const queue = player.nodes.get(interaction.guildId);
+      if (!queue?.isPlaying()) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
+      queue.node.setPaused(true);
+      await interaction.reply({ embeds: [mkEmbed('#f39c12', '⏸️ Paused', `**${queue.currentTrack.title}**`)] });
     }
 
+    // else if (commandName === 'resume') {
+    //   const q = getQueue(interaction.guildId);
+    //   if (!q) return interaction.reply({ content: '❌ Nothing is paused!', flags: MessageFlags.Ephemeral });
+    //   q.player.unpause();
+    //   await interaction.reply({ embeds: [mkEmbed('#1db954','▶️ Resumed', `**${q.current?.title || 'Music'}** is playing again.`)] });
+    // }
+
     else if (commandName === 'resume') {
-      const q = getQueue(interaction.guildId);
-      if (!q) return interaction.reply({ content: '❌ Nothing is paused!', flags: MessageFlags.Ephemeral });
-      q.player.unpause();
-      await interaction.reply({ embeds: [mkEmbed('#1db954','▶️ Resumed', `**${q.current?.title || 'Music'}** is playing again.`)] });
+      const queue = player.nodes.get(interaction.guildId);
+      if (!queue) return interaction.reply({ content: '❌ Nothing is paused!', flags: MessageFlags.Ephemeral });
+      queue.node.setPaused(false);
+      await interaction.reply({ embeds: [mkEmbed('#1db954', '▶️ Resumed', `**${queue.currentTrack.title}**`)] });
     }
 
 
@@ -1532,23 +1613,23 @@ client.on('guildMemberAdd', async (member) => {
 
 
 // ─── VOICE STATE (Auto-disconnect when alone) ────────────────────────────────
-client.on('voiceStateUpdate', (oldState, newState) => {
-  if (newState.member?.user.bot) return;
-  const q = getQueue(newState.guild.id);
-  if (!q) return;
-  const vc = newState.guild.channels.cache.get(q.connection.joinConfig.channelId);
-  if (vc && vc.members.filter(m => !m.user.bot).size === 0) {
-    setTimeout(() => {
-      const q2 = getQueue(newState.guild.id);
-      const vc2 = newState.guild.channels.cache.get(q2?.connection.joinConfig.channelId);
-      if (vc2 && vc2.members.filter(m => !m.user.bot).size === 0) {
-        q2.connection.destroy();
-        musicQueues.delete(newState.guild.id);
-        q2.textChannel.send('👋 Everyone left the voice channel, so I left too. See ya!');
-      }
-    }, 30000);
-  }
-});
+// client.on('voiceStateUpdate', (oldState, newState) => {
+//   if (newState.member?.user.bot) return;
+//   const q = getQueue(newState.guild.id);
+//   if (!q) return;
+//   const vc = newState.guild.channels.cache.get(q.connection.joinConfig.channelId);
+//   if (vc && vc.members.filter(m => !m.user.bot).size === 0) {
+//     setTimeout(() => {
+//       const q2 = getQueue(newState.guild.id);
+//       const vc2 = newState.guild.channels.cache.get(q2?.connection.joinConfig.channelId);
+//       if (vc2 && vc2.members.filter(m => !m.user.bot).size === 0) {
+//         q2.connection.destroy();
+//         musicQueues.delete(newState.guild.id);
+//         q2.textChannel.send('👋 Everyone left the voice channel, so I left too. See ya!');
+//       }
+//     }, 30000);
+//   }
+// });
 
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
