@@ -1011,6 +1011,7 @@ client.on('interactionCreate', async (interaction) => {
 
     else if (commandName === 'play') {
       const query = interaction.options.getString('query');
+      console.log('Play command triggered:', query);
       const voiceChannel = interaction.member.voice?.channel;
       if (!voiceChannel) return interaction.reply({ content: '❌ Join a voice channel first!', flags: MessageFlags.Ephemeral });
       await interaction.deferReply();
