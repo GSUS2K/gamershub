@@ -83,6 +83,9 @@ player.events.on('playerError', (queue, error) => {
   console.error('Player error:', error);
   queue.metadata.channel.send(`❌ Player error: ${error.message}`);
 });
+player.events.on('debug', (queue, message) => {
+  console.log(`[Player Debug] ${message}`);
+});
 player.events.on('error', (queue, error) => {
   console.error('Player error:', error);
   queue.metadata.channel.send(`❌ Error: ${error.message}`);
@@ -1328,6 +1331,7 @@ client.on('messageCreate', async (message) => {
 
   // ── DM Relay ──────────────────────────────────────────────────────────────
   if (!message.guild) {
+    if (!message.content && message.attachments.size === 0) return;
       console.log('DM received from:', message.author.tag, '| Owner ID:', OWNER_ID);
     if (message.author.id !== OWNER_ID) {
       // Forward DM to owner
