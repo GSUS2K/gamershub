@@ -1019,13 +1019,22 @@ client.on('interactionCreate', async (interaction) => {
         // const { track } = await player.play(voiceChannel, query, {
         //   nodeOptions: { metadata: { channel: interaction.channel } }
         // });
+        // const { track } = await player.play(voiceChannel, query, {
+        //   nodeOptions: {
+        //     metadata: { channel: interaction.channel },
+        //     bufferingTimeout: 3000,
+        //     streamConfig: {
+        //       useFFmpeg: true,
+        //       filters: { ffmpeg: { args: ['-af', 'aresample=48000'] } }
+        //     }
+        //   }
+        // });
         const { track } = await player.play(voiceChannel, query, {
           nodeOptions: {
             metadata: { channel: interaction.channel },
-            bufferingTimeout: 3000,
-            streamConfig: {
-              useFFmpeg: true,
-              filters: { ffmpeg: { args: ['-af', 'aresample=48000'] } }
+            ytdlOptions: {
+              quality: 'highestaudio',
+              filter: 'audioonly',
             }
           }
         });
