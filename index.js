@@ -425,6 +425,11 @@ client.once('clientReady', async () => {
       console.log('FFmpeg not found!');
     }
   await player.extractors.loadMulti(DefaultExtractors);
+const { SpotifyExtractor } = require('@discord-player/extractor');
+await player.extractors.register(SpotifyExtractor, {
+  clientId: process.env.SPOTIFY_CLIENT_ID,
+  clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+});
   console.log('✅ Music extractors loaded');
   console.log(`✅ Logged in as ${client.user.tag}`);
   // client.user.setActivity('your server 👀', { type: 3 }); // WATCHING
