@@ -1037,9 +1037,10 @@ client.on('interactionCreate', async (interaction) => {
         const { track } = await player.play(voiceChannel, query, {
           nodeOptions: {
             metadata: { channel: interaction.channel },
-            ytdlOptions: {
-              quality: 'highestaudio',
-              filter: 'audioonly',
+          },
+          requestOptions: {
+            headers: {
+              cookie: require('fs').readFileSync('/home/ganesh21112000/gamershub/cookies.txt', 'utf8')
             }
           }
         });
