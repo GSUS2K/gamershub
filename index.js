@@ -1229,12 +1229,12 @@ client.on('interactionCreate', async (interaction) => {
   };
   const routing = routingMap[region];
 
-  // const matchRoutingMap = {
-  //   ...routingMap,
-  //   sg2: 'sea', // SEA match history
-  // };
+  const matchRoutingMap = {
+    ...routingMap,
+    sg2: 'sea', // SEA match history
+  };
       
-  const matchRouting = region === 'sg2' || region === 'oc1' ? 'sea' : routing;
+  // const matchRouting = region === 'sg2' || region === 'oc1' ? 'sea' : routing;
 
   try {
     // Split Riot ID into name + tag
@@ -1300,15 +1300,28 @@ client.on('interactionCreate', async (interaction) => {
     // const matchlistRes = await fetch(
     //   `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
     // );
+    // const matchlistRes = await fetch(
+    //   `https://${matchRoutingMap[region]}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
+    // );
+    const matchRouting = region === 'sg2' || region === 'oc1' ? 'sea' : routing;
+    
     const matchlistRes = await fetch(
-      `https://${matchRoutingMap[region]}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
+      `https://${matchRouting}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
     );
+    
     const matchIds = await matchlistRes.json();
     
     // 5. Get last 5 match details
+    // const matchDetails = await Promise.all(
+    //   matchIds.slice(0, 5).map(id => 
+    //     fetch(`https://${routing}.api.riotgames.com/lol/match/v5/matches/${id}?api_key=${RIOT_KEY}`)
+    //       .then(r => r.json())
+    //   )
+    // );
+
     const matchDetails = await Promise.all(
       matchIds.slice(0, 5).map(id => 
-        fetch(`https://${routing}.api.riotgames.com/lol/match/v5/matches/${id}?api_key=${RIOT_KEY}`)
+        fetch(`https://${matchRouting}.api.riotgames.com/lol/match/v5/matches/${id}?api_key=${RIOT_KEY}`)
           .then(r => r.json())
       )
     );
