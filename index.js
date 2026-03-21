@@ -1287,6 +1287,9 @@ client.on('interactionCreate', async (interaction) => {
     // )).json() : null;
 
     // 4. Get recent matches (last 5)
+
+    console.log('Routing:', routing, 'Region:', region);
+    
     const matchlistRes = await fetch(
       `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
     );
