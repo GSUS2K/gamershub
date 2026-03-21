@@ -1185,20 +1185,26 @@ client.on('interactionCreate', async (interaction) => {
         const data = await res.json();
         const battles = data.items?.slice(0, 5);
         if (!battles?.length) return interaction.editReply('❌ No recent battles found.');
-    
+
+        const formatMode = (mode) => {
+          if (!mode) return 'Unknown';
+          return mode.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim();
+        };
+        
         const embeds = battles.map((battle, i) => {
           const b = battle.battle;
           const event = battle.event;
           const time = new Date(battle.battleTime.replace(
             /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/,
             '$1-$2-$3T$4:$5:$6'
-          ));
+        ));
     
           const result = b.result === 'victory' ? '✅ Victory' : b.result === 'defeat' ? '❌ Defeat' : '🤝 Draw';
           const color = b.result === 'victory' ? '#2ecc71' : b.result === 'defeat' ? '#e74c3c' : '#f1c40f';
-          const mode = event.mode || 'Unknown Mode';
+          const mode = formatMode(event.mode);
           const map = event.map || 'Unknown Map';
-          const trophyChange = b.trophyChange ? (b.trophyChange > 0 ? `+${b.trophyChange} 🏆` : `${b.trophyChange} 🏆`) : '';
+          // const trophyChange = b.trophyChange ? (b.trophyChange > 0 ? `+${b.trophyChange} 🏆` : `${b.trophyChange} 🏆`) : '';
+          const trophyChange = b.trophyChange != null ? (b.trophyChange > 0 ? `+${b.trophyChange} 🏆` : b.trophyChange === 0 ? `±0 🏆` : `${b.trophyChange} 🏆`) : 'N/A (Power League)';
     
           // Find the player in the battle
           const allPlayers = [
@@ -1211,7 +1217,7 @@ client.on('interactionCreate', async (interaction) => {
     
           // Star player
           const starPlayer = b.starPlayer?.tag === `#${tag}` ? '⭐ Star Player' : '';
-    
+        
           const embed = new EmbedBuilder()
             .setColor(color)
             .setTitle(`${result} — ${mode}`)
