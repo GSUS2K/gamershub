@@ -1642,6 +1642,7 @@ client.on('interactionCreate', async (interaction) => {
           const gameMode = queueNames[match.info.queueId] || 'Unknown';
           const gold = (p.goldEarned / 1000).toFixed(1) + 'k';
           const damage = (p.totalDamageDealtToChampions / 1000).toFixed(1) + 'k';
+          const visionPerMin = (p.visionScore / mins).toFixed(1);
           const killParticipation = match.info.participants
             .filter(pl => pl.teamId === p.teamId)
             .reduce((sum, pl) => sum + pl.kills, 0);
@@ -1672,7 +1673,8 @@ client.on('interactionCreate', async (interaction) => {
               { name: '👥 KP', value: kp, inline: true },
               { name: '💰 Gold', value: gold, inline: true },
               { name: '💥 Damage', value: damage, inline: true },
-              { name: '👁️ Vision', value: `${p.visionScore}`, inline: true },
+              // { name: '👁️ Vision', value: `${p.visionScore}`, inline: true },
+              { name: '👁️ Vision', value: `${p.visionScore} (${visionPerMin}/min)`, inline: true },
               { name: '⏱️ Duration', value: `${mins}m`, inline: true },
               { name: '🔮 Items', value: `${[p.item0,p.item1,p.item2,p.item3,p.item4,p.item5].filter(i=>i>0).length} items built`, inline: true },
               ...(badges ? [{ name: '🏅 Highlights', value: badges, inline: false }] : [])
