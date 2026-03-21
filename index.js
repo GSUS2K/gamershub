@@ -1204,7 +1204,7 @@ client.on('interactionCreate', async (interaction) => {
           const mode = formatMode(event.mode);
           const map = event.map || 'Unknown Map';
           // const trophyChange = b.trophyChange ? (b.trophyChange > 0 ? `+${b.trophyChange} 🏆` : `${b.trophyChange} 🏆`) : '';
-          const trophyChange = b.trophyChange != null ? (b.trophyChange > 0 ? `+${b.trophyChange} 🏆` : b.trophyChange === 0 ? `±0 🏆` : `${b.trophyChange} 🏆`) : 'N/A (Power League)';
+          const trophyChange = b.trophyChange != null ? (b.trophyChange > 0 ? `+${b.trophyChange} 🏆` : b.trophyChange === 0 ? `±0 🏆` : `${b.trophyChange} 🏆`) : 'N/A (Ranked)';
     
           // Find the player in the battle
           const allPlayers = [
