@@ -443,8 +443,12 @@ const commands = [
   new SlashCommandBuilder().setName('brawllink').setDescription('Link your Brawl Stars tag to your Discord')
   .addStringOption(o => o.setName('tag').setDescription('Your player tag e.g. #ABC123').setRequired(true)),
   
+  // new SlashCommandBuilder().setName('brawlhistory').setDescription('Recent Brawl Stars battle log')
+  //   .addStringOption(o => o.setName('tag').setDescription('Player tag e.g. #ABC123').setRequired(true)),
+
   new SlashCommandBuilder().setName('brawlhistory').setDescription('Recent Brawl Stars battle log')
-    .addStringOption(o => o.setName('tag').setDescription('Player tag e.g. #ABC123').setRequired(true)),
+  .addUserOption(o => o.setName('user').setDescription('Mention a linked Discord user (optional)'))
+  .addStringOption(o => o.setName('tag').setDescription('Player tag e.g. #ABC123 (optional if linked)')),
   
   // new SlashCommandBuilder().setName('brawl').setDescription('Look up a Brawl Stars player')
   //   .addStringOption(o => o.setName('tag').setDescription('Player tag e.g. #ABC123').setRequired(true))
