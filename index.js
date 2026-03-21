@@ -1582,8 +1582,16 @@ client.on('interactionCreate', async (interaction) => {
           const firstBlood = p.firstBloodKill ? '🩸 First Blood' : '';
           const pentakill = p.pentaKills > 0 ? `💥 PENTAKILL x${p.pentaKills}` : '';
           const quadrakill = p.quadraKills > 0 && p.pentaKills === 0 ? `⚡ Quadra Kill` : '';
-          const mvp = match.info.participants.sort((a, b) => (b.kills + b.assists) - (a.kills + a.assists))[0]?.puuid === account.puuid ? '👑 MVP' : '';
-          const inted = p.deaths >= 10 ? '💀 Inted' : '';
+          // const mvp = match.info.participants.sort((a, b) => (b.kills + b.assists) - (a.kills + a.assists))[0]?.puuid === account.puuid ? '👑 MVP' : '';
+          // const inted = p.deaths >= 10 ? '💀 Inted' : '';
+          const teamPlayers = match.info.participants.filter(pl => pl.teamId === p.teamId);
+          const mvp = teamPlayers.sort((a, b) => (b.kills + b.assists + b.visionScore) - (a.kills + a.assists + a.visionScore))[0]?.puuid === account.puuid ? '👑 Team MVP' : '';
+          const inted = p.deaths >= 10 ? '💀 Inter' : '';
+          const carried = p.kills >= 10 ? '🔥 Popping Off' : '';
+          const supportGod = p.visionScore >= 50 ? '👁️ Vision God' : '';
+          const tanky = p.totalDamageTaken >= 30000 ? '🛡️ Tank God' : '';
+          const unkillable = p.deaths === 0 && mins >= 20 ? '💎 Deathless' : '';
+          const badges = [firstBlood, pentakill, quadrakill, mvp, carried, supportGod, tanky, unkillable, inted].filter(Boolean).join(' ');
           const badges = [firstBlood, pentakill, quadrakill, mvp, inted].filter(Boolean).join(' ');
     
           return new EmbedBuilder()
