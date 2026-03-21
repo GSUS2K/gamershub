@@ -365,6 +365,25 @@ const commands = [
   //     { name: 'JP', value: 'jp1' },
   //   )),
 
+  new SlashCommandBuilder().setName('history').setDescription('Detailed match history for a League player')
+  .addUserOption(o => o.setName('user').setDescription('Mention a linked Discord user (optional)'))
+  .addStringOption(o => o.setName('username').setDescription('Riot ID e.g. Name#TAG (optional if linked)'))
+  .addStringOption(o => o.setName('region').setDescription('Region (not needed if linked)')
+    .addChoices(
+      { name: 'EUW', value: 'euw1' },
+      { name: 'EUNE', value: 'eun1' },
+      { name: 'NA', value: 'na1' },
+      { name: 'KR', value: 'kr' },
+      { name: 'BR', value: 'br1' },
+      { name: 'TR', value: 'tr1' },
+      { name: 'JP', value: 'jp1' },
+      { name: 'SEA', value: 'sg2' },
+      { name: 'OCE', value: 'oc1' },
+      { name: 'LAN', value: 'la1' },
+      { name: 'LAS', value: 'la2' },
+      { name: 'RU', value: 'ru' },
+    )),
+  
   new SlashCommandBuilder().setName('unlink').setDescription('Unlink your Riot account from Discord'),
 
   new SlashCommandBuilder().setName('stats').setDescription('Look up a League of Legends player')
@@ -1193,204 +1212,285 @@ client.on('interactionCreate', async (interaction) => {
       await interaction.reply({ content: `✅ DM sent to **${target.tag}**`, flags: MessageFlags.Ephemeral });
     }
 
-    else if (commandName === 'stats') {
-  await interaction.deferReply();
-  // const input = interaction.options.getString('username');
-  // const region = interaction.options.getString('region');
+  //   else if (commandName === 'stats') {
+  // await interaction.deferReply();
+  // // const input = interaction.options.getString('username');
+  // // const region = interaction.options.getString('region');
+  // // const RIOT_KEY = process.env.RIOT_API_KEY;
+
   // const RIOT_KEY = process.env.RIOT_API_KEY;
+  // let input, region;
+  // const mentionedUser = interaction.options.getUser('user');
+  // const targetId = mentionedUser?.id || interaction.user.id;
 
-  const RIOT_KEY = process.env.RIOT_API_KEY;
-  let input, region;
-  const mentionedUser = interaction.options.getUser('user');
-  const targetId = mentionedUser?.id || interaction.user.id;
-
+  // // if (mentionedUser || !interaction.options.getString('username')) {
+  // //   const linked = linkedAccounts.get(targetId);
+  // //   if (!linked) return interaction.editReply(`❌ ${mentionedUser ? 'That user has' : 'You have'} not linked a Riot account. Use \`/link\` first.`);
+  // //   input = linked.riotId;
+  // //   region = linked.region;
+  // // } 
   // if (mentionedUser || !interaction.options.getString('username')) {
-  //   const linked = linkedAccounts.get(targetId);
+  //   const linked = await LinkedAccount.findOne({ discordId: targetId });
   //   if (!linked) return interaction.editReply(`❌ ${mentionedUser ? 'That user has' : 'You have'} not linked a Riot account. Use \`/link\` first.`);
   //   input = linked.riotId;
   //   region = linked.region;
-  // } 
-  if (mentionedUser || !interaction.options.getString('username')) {
-    const linked = await LinkedAccount.findOne({ discordId: targetId });
-    if (!linked) return interaction.editReply(`❌ ${mentionedUser ? 'That user has' : 'You have'} not linked a Riot account. Use \`/link\` first.`);
-    input = linked.riotId;
-    region = linked.region;
-  } else {
-    input = interaction.options.getString('username');
-    region = interaction.options.getString('region');
-    if (!region) return interaction.editReply('❌ Please provide a region or link your account with `/link`.');
-  }
+  // } else {
+  //   input = interaction.options.getString('username');
+  //   region = interaction.options.getString('region');
+  //   if (!region) return interaction.editReply('❌ Please provide a region or link your account with `/link`.');
+  // }
 
-  // Routing regions for account API
-  const routingMap = {
-  euw1: 'europe', eun1: 'europe', tr1: 'europe',
-  na1: 'americas', br1: 'americas',
-  kr: 'asia', jp1: 'asia', sg2: 'asia', oc1: 'sea'
-  };
-  const routing = routingMap[region];
+  // // Routing regions for account API
+  // const routingMap = {
+  // euw1: 'europe', eun1: 'europe', tr1: 'europe',
+  // na1: 'americas', br1: 'americas',
+  // kr: 'asia', jp1: 'asia', sg2: 'asia', oc1: 'sea'
+  // };
+  // const routing = routingMap[region];
 
-  const matchRoutingMap = {
-    ...routingMap,
-    sg2: 'sea', // SEA match history
-  };
+  // const matchRoutingMap = {
+  //   ...routingMap,
+  //   sg2: 'sea', // SEA match history
+  // };
       
-  // const matchRouting = region === 'sg2' || region === 'oc1' ? 'sea' : routing;
+  // // const matchRouting = region === 'sg2' || region === 'oc1' ? 'sea' : routing;
 
-  try {
-    // Split Riot ID into name + tag
-    const [gameName, tagLine] = input.includes('#')
-      ? input.split('#')
-      : [input, region.toUpperCase()];
+  // try {
+  //   // Split Riot ID into name + tag
+  //   const [gameName, tagLine] = input.includes('#')
+  //     ? input.split('#')
+  //     : [input, region.toUpperCase()];
 
-    // 1. Get PUUID from Riot ID
-    const accountRes = await fetch(
-      `https://${routing}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}?api_key=${RIOT_KEY}`
-    );
-    if (!accountRes.ok) return interaction.editReply('❌ Player not found. Check the Riot ID and region.');
-    const account = await accountRes.json();
+  //   // 1. Get PUUID from Riot ID
+  //   const accountRes = await fetch(
+  //     `https://${routing}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}?api_key=${RIOT_KEY}`
+  //   );
+  //   if (!accountRes.ok) return interaction.editReply('❌ Player not found. Check the Riot ID and region.');
+  //   const account = await accountRes.json();
 
-    // 2. Get Summoner data
-    const summonerRes = await fetch(
-      `https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${account.puuid}?api_key=${RIOT_KEY}`
-    );
-    const summoner = await summonerRes.json();
+  //   // 2. Get Summoner data
+  //   const summonerRes = await fetch(
+  //     `https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${account.puuid}?api_key=${RIOT_KEY}`
+  //   );
+  //   const summoner = await summonerRes.json();
 
-    console.log('Summoner response:', summoner);
+  //   console.log('Summoner response:', summoner);
 
-    if (!summoner.puuid) {
-    return interaction.editReply('❌ Could not find summoner data. Check region is correct.');
-    }
+  //   if (!summoner.puuid) {
+  //   return interaction.editReply('❌ Could not find summoner data. Check region is correct.');
+  //   }
 
-    // 3. Get Ranked stats
-    // const rankedRes = await fetch(
-    //   `https://${region}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summoner.id}?api_key=${RIOT_KEY}`
-    // );
-    // const ranked = await rankedRes.json();
+  //   // 3. Get Ranked stats
+  //   // const rankedRes = await fetch(
+  //   //   `https://${region}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summoner.id}?api_key=${RIOT_KEY}`
+  //   // );
+  //   // const ranked = await rankedRes.json();
 
-    // if (!Array.isArray(ranked)) {
-    // console.log('Ranked API error:', ranked);
-    // return interaction.editReply(`❌ API error: ${ranked.status?.message || 'Unknown error'}`);
-    // }
+  //   // if (!Array.isArray(ranked)) {
+  //   // console.log('Ranked API error:', ranked);
+  //   // return interaction.editReply(`❌ API error: ${ranked.status?.message || 'Unknown error'}`);
+  //   // }
 
-    const rankedRes = await fetch(
-  `https://${region}.api.riotgames.com/lol/league/v4/entries/by-puuid/${account.puuid}?api_key=${RIOT_KEY}`
-  );
-  const ranked = await rankedRes.json();
+  //   const rankedRes = await fetch(
+  // `https://${region}.api.riotgames.com/lol/league/v4/entries/by-puuid/${account.puuid}?api_key=${RIOT_KEY}`
+  // );
+  // const ranked = await rankedRes.json();
 
-  if (!Array.isArray(ranked)) {
-    console.log('Ranked API error:', ranked);
-    return interaction.editReply(`❌ API error: ${ranked.status?.message || 'Unknown error'}`);
-  }
+  // if (!Array.isArray(ranked)) {
+  //   console.log('Ranked API error:', ranked);
+  //   return interaction.editReply(`❌ API error: ${ranked.status?.message || 'Unknown error'}`);
+  // }
 
-    // 4. Get recent matches (last 5)
-    // const matchlistRes = await fetch(
-    //   `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
-    // );
-    // const matchIds = await matchlistRes.json();
+  //   // 4. Get recent matches (last 5)
+  //   // const matchlistRes = await fetch(
+  //   //   `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
+  //   // );
+  //   // const matchIds = await matchlistRes.json();
 
-    // // 5. Get last match details
-    // const lastMatch = matchIds[0] ? await (await fetch(
-    //   `https://${routing}.api.riotgames.com/lol/match/v5/matches/${matchIds[0]}?api_key=${RIOT_KEY}`
-    // )).json() : null;
+  //   // // 5. Get last match details
+  //   // const lastMatch = matchIds[0] ? await (await fetch(
+  //   //   `https://${routing}.api.riotgames.com/lol/match/v5/matches/${matchIds[0]}?api_key=${RIOT_KEY}`
+  //   // )).json() : null;
 
-    // 4. Get recent matches (last 5)
+  //   // 4. Get recent matches (last 5)
 
-    console.log('Routing:', routing, 'Region:', region);
+  //   console.log('Routing:', routing, 'Region:', region);
     
-    // const matchlistRes = await fetch(
-    //   `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
-    // );
-    // const matchlistRes = await fetch(
-    //   `https://${matchRoutingMap[region]}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
-    // );
-    const matchRouting = region === 'sg2' || region === 'oc1' ? 'sea' : routing;
+  //   // const matchlistRes = await fetch(
+  //   //   `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
+  //   // );
+  //   // const matchlistRes = await fetch(
+  //   //   `https://${matchRoutingMap[region]}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
+  //   // );
+  //   const matchRouting = region === 'sg2' || region === 'oc1' ? 'sea' : routing;
     
-    const matchlistRes = await fetch(
-      `https://${matchRouting}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
-    );
+  //   const matchlistRes = await fetch(
+  //     `https://${matchRouting}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
+  //   );
     
-    const matchIds = await matchlistRes.json();
+  //   const matchIds = await matchlistRes.json();
     
-    // 5. Get last 5 match details
-    // const matchDetails = await Promise.all(
-    //   matchIds.slice(0, 5).map(id => 
-    //     fetch(`https://${routing}.api.riotgames.com/lol/match/v5/matches/${id}?api_key=${RIOT_KEY}`)
-    //       .then(r => r.json())
-    //   )
-    // );
+  //   // 5. Get last 5 match details
+  //   // const matchDetails = await Promise.all(
+  //   //   matchIds.slice(0, 5).map(id => 
+  //   //     fetch(`https://${routing}.api.riotgames.com/lol/match/v5/matches/${id}?api_key=${RIOT_KEY}`)
+  //   //       .then(r => r.json())
+  //   //   )
+  //   // );
 
-    const matchDetails = await Promise.all(
-      matchIds.slice(0, 5).map(id => 
-        fetch(`https://${matchRouting}.api.riotgames.com/lol/match/v5/matches/${id}?api_key=${RIOT_KEY}`)
-          .then(r => r.json())
-      )
-    );
+  //   const matchDetails = await Promise.all(
+  //     matchIds.slice(0, 5).map(id => 
+  //       fetch(`https://${matchRouting}.api.riotgames.com/lol/match/v5/matches/${id}?api_key=${RIOT_KEY}`)
+  //         .then(r => r.json())
+  //     )
+  //   );
 
-    console.log('First match raw:', JSON.stringify(matchDetails[0])?.slice(0, 200));
+  //   console.log('First match raw:', JSON.stringify(matchDetails[0])?.slice(0, 200));
     
-    const lastMatch = matchDetails[0] || null;
+  //   const lastMatch = matchDetails[0] || null;
     
-    // Build ranked info
-    const soloQ = ranked.find(r => r.queueType === 'RANKED_SOLO_5x5');
-    const flexQ  = ranked.find(r => r.queueType === 'RANKED_FLEX_SR');
+  //   // Build ranked info
+  //   const soloQ = ranked.find(r => r.queueType === 'RANKED_SOLO_5x5');
+  //   const flexQ  = ranked.find(r => r.queueType === 'RANKED_FLEX_SR');
 
-    const rankStr = soloQ
-      ? `${soloQ.tier} ${soloQ.rank} — ${soloQ.leaguePoints} LP\nW: ${soloQ.wins} L: ${soloQ.losses} (${Math.round(soloQ.wins/(soloQ.wins+soloQ.losses)*100)}% WR)`
-      : 'Unranked';
+  //   const rankStr = soloQ
+  //     ? `${soloQ.tier} ${soloQ.rank} — ${soloQ.leaguePoints} LP\nW: ${soloQ.wins} L: ${soloQ.losses} (${Math.round(soloQ.wins/(soloQ.wins+soloQ.losses)*100)}% WR)`
+  //     : 'Unranked';
 
-    const flexStr = flexQ
-      ? `${flexQ.tier} ${flexQ.rank} — ${flexQ.leaguePoints} LP`
-      : 'Unranked';
+  //   const flexStr = flexQ
+  //     ? `${flexQ.tier} ${flexQ.rank} — ${flexQ.leaguePoints} LP`
+  //     : 'Unranked';
 
-    // Build last match info
-    // let lastMatchStr = 'No recent games';
-    // if (lastMatch) {
-    //   const player = lastMatch.info.participants.find(p => p.puuid === account.puuid);
-    //   if (player) {
-    //     const kda = `${player.kills}/${player.deaths}/${player.assists}`;
-    //     const won = player.win ? '✅ Win' : '❌ Loss';
-    //     const cs = player.totalMinionsKilled + player.neutralMinionsKilled;
-    //     const mins = Math.floor(lastMatch.info.gameDuration / 60);
-    //     lastMatchStr = `${won} — **${player.championName}** — \`${kda}\` KDA — ${cs} CS (${mins}m)`;
-    //   }
-    // }
+  //   // Build last match info
+  //   // let lastMatchStr = 'No recent games';
+  //   // if (lastMatch) {
+  //   //   const player = lastMatch.info.participants.find(p => p.puuid === account.puuid);
+  //   //   if (player) {
+  //   //     const kda = `${player.kills}/${player.deaths}/${player.assists}`;
+  //   //     const won = player.win ? '✅ Win' : '❌ Loss';
+  //   //     const cs = player.totalMinionsKilled + player.neutralMinionsKilled;
+  //   //     const mins = Math.floor(lastMatch.info.gameDuration / 60);
+  //   //     lastMatchStr = `${won} — **${player.championName}** — \`${kda}\` KDA — ${cs} CS (${mins}m)`;
+  //   //   }
+  //   // }
 
-    let lastMatchStr = 'No recent games';
-    if (matchDetails.length) {
-      const lines = matchDetails.map(match => {
-        const p = match.info.participants.find(p => p.puuid === account.puuid);
-        if (!p) return null;
-        const kda = `${p.kills}/${p.deaths}/${p.assists}`;
-        const won = p.win ? '✅' : '❌';
-        const cs = p.totalMinionsKilled + p.neutralMinionsKilled;
-        const mins = Math.floor(match.info.gameDuration / 60);
-        return `${won} **${p.championName}** \`${kda}\` ${cs}cs ${mins}m`;
-      }).filter(Boolean);
-      lastMatchStr = lines.join('\n');
-    }
+  //   let lastMatchStr = 'No recent games';
+  //   if (matchDetails.length) {
+  //     const lines = matchDetails.map(match => {
+  //       const p = match.info.participants.find(p => p.puuid === account.puuid);
+  //       if (!p) return null;
+  //       const kda = `${p.kills}/${p.deaths}/${p.assists}`;
+  //       const won = p.win ? '✅' : '❌';
+  //       const cs = p.totalMinionsKilled + p.neutralMinionsKilled;
+  //       const mins = Math.floor(match.info.gameDuration / 60);
+  //       return `${won} **${p.championName}** \`${kda}\` ${cs}cs ${mins}m`;
+  //     }).filter(Boolean);
+  //     lastMatchStr = lines.join('\n');
+  //   }
 
-  console.log('Match IDs:', matchIds);
-  console.log('Match details count:', matchDetails.length);
+  // console.log('Match IDs:', matchIds);
+  // console.log('Match details count:', matchDetails.length);
 
-    const iconUrl = `https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/${summoner.profileIconId}.png`;
+  //   const iconUrl = `https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/${summoner.profileIconId}.png`;
 
-    await interaction.editReply({ embeds: [
-      new EmbedBuilder()
-        .setColor('#C89B3C')
-        .setTitle(`📊 ${gameName}#${tagLine}`)
-        .setThumbnail(iconUrl)
-        .addFields(
-          { name: '🏆 Solo/Duo', value: rankStr, inline: true },
-          { name: '👥 Flex', value: flexStr, inline: true },
-          { name: '🎮 Last Game', value: lastMatchStr, inline: false },
-          { name: '🎯 Summoner Level', value: `${summoner.summonerLevel}`, inline: true },
-        )
-        .setFooter({ text: `Region: ${region.toUpperCase()} • Data from Riot Games` })
-        .setTimestamp()
-    ]});
+  //   await interaction.editReply({ embeds: [
+  //     new EmbedBuilder()
+  //       .setColor('#C89B3C')
+  //       .setTitle(`📊 ${gameName}#${tagLine}`)
+  //       .setThumbnail(iconUrl)
+  //       .addFields(
+  //         { name: '🏆 Solo/Duo', value: rankStr, inline: true },
+  //         { name: '👥 Flex', value: flexStr, inline: true },
+  //         { name: '🎮 Last Game', value: lastMatchStr, inline: false },
+  //         { name: '🎯 Summoner Level', value: `${summoner.summonerLevel}`, inline: true },
+  //       )
+  //       .setFooter({ text: `Region: ${region.toUpperCase()} • Data from Riot Games` })
+  //       .setTimestamp()
+  //   ]});
 
+  //     } catch (err) {
+  //       await interaction.editReply(`❌ Error fetching stats: ${err.message}`);
+  //     }
+  //   }
+
+    else if (commandName === 'stats') {
+      await interaction.deferReply();
+      const RIOT_KEY = process.env.RIOT_API_KEY;
+      let input, region;
+      const mentionedUser = interaction.options.getUser('user');
+      const targetId = mentionedUser?.id || interaction.user.id;
+    
+      if (mentionedUser || !interaction.options.getString('username')) {
+        const linked = await LinkedAccount.findOne({ discordId: targetId });
+        if (!linked) return interaction.editReply(`❌ ${mentionedUser ? 'That user has' : 'You have'} not linked a Riot account. Use \`/link\` first.`);
+        input = linked.riotId;
+        region = linked.region;
+      } else {
+        input = interaction.options.getString('username');
+        region = interaction.options.getString('region');
+        if (!region) return interaction.editReply('❌ Please provide a region or link your account with `/link`.');
+      }
+    
+      const routingMap = {
+        euw1: 'europe', eun1: 'europe', tr1: 'europe', ru: 'europe',
+        na1: 'americas', br1: 'americas', la1: 'americas', la2: 'americas',
+        kr: 'asia', jp1: 'asia', sg2: 'asia', oc1: 'sea'
+      };
+      const routing = routingMap[region];
+      const [gameName, tagLine] = input.includes('#') ? input.split('#') : [input, region.toUpperCase()];
+    
+      try {
+        const accountRes = await fetch(
+          `https://${routing}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}?api_key=${RIOT_KEY}`
+        );
+        if (!accountRes.ok) return interaction.editReply('❌ Player not found. Check the Riot ID and region.');
+        const account = await accountRes.json();
+    
+        const summonerRes = await fetch(
+          `https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${account.puuid}?api_key=${RIOT_KEY}`
+        );
+        const summoner = await summonerRes.json();
+        if (!summoner.puuid) return interaction.editReply('❌ Could not find summoner data.');
+    
+        const rankedRes = await fetch(
+          `https://${region}.api.riotgames.com/lol/league/v4/entries/by-puuid/${account.puuid}?api_key=${RIOT_KEY}`
+        );
+        const ranked = await rankedRes.json();
+        if (!Array.isArray(ranked)) return interaction.editReply(`❌ API error: ${ranked.status?.message || 'Unknown'}`);
+    
+        const soloQ = ranked.find(r => r.queueType === 'RANKED_SOLO_5x5');
+        const flexQ  = ranked.find(r => r.queueType === 'RANKED_FLEX_SR');
+    
+        const rankStr = soloQ
+          ? `${soloQ.tier} ${soloQ.rank} — ${soloQ.leaguePoints} LP\n${soloQ.wins}W ${soloQ.losses}L (${Math.round(soloQ.wins/(soloQ.wins+soloQ.losses)*100)}% WR)`
+          : 'Unranked';
+    
+        const flexStr = flexQ
+          ? `${flexQ.tier} ${flexQ.rank} — ${flexQ.leaguePoints} LP\n${flexQ.wins}W ${flexQ.losses}L`
+          : 'Unranked';
+    
+        const iconUrl = `https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/${summoner.profileIconId}.png`;
+    
+        await interaction.editReply({ embeds: [
+          new EmbedBuilder()
+            .setColor('#C89B3C')
+            .setAuthor({ name: `${gameName}#${tagLine}`, iconURL: iconUrl })
+            .setThumbnail(iconUrl)
+            .addFields(
+              { name: '🏆 Solo/Duo', value: rankStr, inline: true },
+              { name: '👥 Flex', value: flexStr, inline: true },
+              { name: '\u200b', value: '\u200b', inline: true },
+              { name: '📊 Level', value: `${summoner.summonerLevel}`, inline: true },
+              { name: '🌏 Region', value: region.toUpperCase(), inline: true },
+              { name: '\u200b', value: '\u200b', inline: true },
+            )
+            .setFooter({ text: 'Use /history for match details • /link to save your account' })
+            .setTimestamp()
+        ]});
+    
       } catch (err) {
-        await interaction.editReply(`❌ Error fetching stats: ${err.message}`);
+        console.error('Stats error:', err);
+        await interaction.editReply(`❌ Error: ${err.message}`);
       }
     }
 
@@ -1400,6 +1500,119 @@ client.on('interactionCreate', async (interaction) => {
       if (!deleted) return interaction.editReply('❌ You don\'t have a linked account.');
       await interaction.editReply('✅ Your Riot account has been unlinked. Use `/link` to link a new one.');
     }
+
+    else if (commandName === 'history') {
+      await interaction.deferReply();
+      const RIOT_KEY = process.env.RIOT_API_KEY;
+      let input, region;
+      const mentionedUser = interaction.options.getUser('user');
+      const targetId = mentionedUser?.id || interaction.user.id;
+    
+      if (mentionedUser || !interaction.options.getString('username')) {
+        const linked = await LinkedAccount.findOne({ discordId: targetId });
+        if (!linked) return interaction.editReply(`❌ ${mentionedUser ? 'That user has' : 'You have'} not linked a Riot account. Use \`/link\` first.`);
+        input = linked.riotId;
+        region = linked.region;
+      } else {
+        input = interaction.options.getString('username');
+        region = interaction.options.getString('region');
+        if (!region) return interaction.editReply('❌ Please provide a region or link your account with `/link`.');
+      }
+    
+      const routingMap = {
+        euw1: 'europe', eun1: 'europe', tr1: 'europe', ru: 'europe',
+        na1: 'americas', br1: 'americas', la1: 'americas', la2: 'americas',
+        kr: 'asia', jp1: 'asia', sg2: 'asia', oc1: 'sea'
+      };
+      const routing = routingMap[region];
+      const matchRouting = region === 'sg2' || region === 'oc1' ? 'sea' : routing;
+    
+      const [gameName, tagLine] = input.includes('#') ? input.split('#') : [input, region.toUpperCase()];
+    
+      try {
+        const accountRes = await fetch(
+          `https://${routing}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}?api_key=${RIOT_KEY}`
+        );
+        if (!accountRes.ok) return interaction.editReply('❌ Player not found.');
+        const account = await accountRes.json();
+    
+        const matchIds = await fetch(
+          `https://${matchRouting}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
+        ).then(r => r.json());
+    
+        if (!matchIds.length) return interaction.editReply('❌ No recent matches found.');
+    
+        const matchDetails = await Promise.all(
+          matchIds.slice(0, 5).map(id =>
+            fetch(`https://${matchRouting}.api.riotgames.com/lol/match/v5/matches/${id}?api_key=${RIOT_KEY}`)
+              .then(r => r.json())
+          )
+        );
+    
+        const queueNames = {
+          420: 'Ranked Solo',
+          440: 'Ranked Flex',
+          450: 'ARAM',
+          400: 'Normal Draft',
+          430: 'Normal Blind',
+          700: 'Clash',
+          830: 'Co-op vs AI',
+          0: 'Custom',
+        };
+    
+        const embeds = matchDetails.map((match, i) => {
+          const p = match.info.participants.find(p => p.puuid === account.puuid);
+          if (!p) return null;
+    
+          const won = p.win ? '✅ WIN' : '❌ LOSS';
+          const kda = `${p.kills}/${p.deaths}/${p.assists}`;
+          const kdaRatio = p.deaths === 0 ? 'Perfect' : ((p.kills + p.assists) / p.deaths).toFixed(2);
+          const cs = p.totalMinionsKilled + p.neutralMinionsKilled;
+          const mins = Math.floor(match.info.gameDuration / 60);
+          const csPerMin = (cs / mins).toFixed(1);
+          const gameMode = queueNames[match.info.queueId] || 'Unknown';
+          const gold = (p.goldEarned / 1000).toFixed(1) + 'k';
+          const damage = (p.totalDamageDealtToChampions / 1000).toFixed(1) + 'k';
+          const killParticipation = match.info.participants
+            .filter(pl => pl.teamId === p.teamId)
+            .reduce((sum, pl) => sum + pl.kills, 0);
+          const kp = killParticipation > 0 ? Math.round(((p.kills + p.assists) / killParticipation) * 100) + '%' : '0%';
+    
+          // Fun unique stats
+          const firstBlood = p.firstBloodKill ? '🩸 First Blood' : '';
+          const pentakill = p.pentaKills > 0 ? `💥 PENTAKILL x${p.pentaKills}` : '';
+          const quadrakill = p.quadraKills > 0 && p.pentaKills === 0 ? `⚡ Quadra Kill` : '';
+          const mvp = match.info.participants.sort((a, b) => (b.kills + b.assists) - (a.kills + a.assists))[0]?.puuid === account.puuid ? '👑 MVP' : '';
+          const inted = p.deaths >= 10 ? '💀 Inted' : '';
+          const badges = [firstBlood, pentakill, quadrakill, mvp, inted].filter(Boolean).join(' ');
+    
+          return new EmbedBuilder()
+            .setColor(p.win ? '#2ecc71' : '#e74c3c')
+            .setTitle(`${won} — ${p.championName} | ${gameMode}`)
+            .addFields(
+              { name: '⚔️ KDA', value: `${kda} (${kdaRatio} ratio)`, inline: true },
+              { name: '🌾 CS', value: `${cs} (${csPerMin}/min)`, inline: true },
+              { name: '👥 KP', value: kp, inline: true },
+              { name: '💰 Gold', value: gold, inline: true },
+              { name: '💥 Damage', value: damage, inline: true },
+              { name: '👁️ Vision', value: `${p.visionScore}`, inline: true },
+              { name: '⏱️ Duration', value: `${mins}m`, inline: true },
+              { name: '🔮 Items', value: `${[p.item0,p.item1,p.item2,p.item3,p.item4,p.item5].filter(i=>i>0).length} items built`, inline: true },
+              ...(badges ? [{ name: '🏅 Highlights', value: badges, inline: false }] : [])
+            )
+            .setFooter({ text: `Match ${i + 1} of 5` });
+        }).filter(Boolean);
+    
+        await interaction.editReply({
+          content: `📊 **Last 5 matches for ${gameName}#${tagLine}**`,
+          embeds: embeds.slice(0, 5)
+        });
+    
+      } catch (err) {
+        console.error('History error:', err);
+        await interaction.editReply(`❌ Error: ${err.message}`);
+      }
+  }
 
     else if (commandName === 'announce') {
       if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: '❌ This command is owner-only.', flags: MessageFlags.Ephemeral });
