@@ -509,7 +509,7 @@ client.on('interactionCreate', async (interaction) => {
 
   try {
 
-    else if (commandName === 'remind') {
+    if (commandName === 'remind') {
       const timeStr = interaction.options.getString('time');
       const reminderMsg = interaction.options.getString('message');
     
@@ -612,7 +612,7 @@ client.on('interactionCreate', async (interaction) => {
     //                   AI COMMANDS
     // ════════════════════════════════════════════
 
-    if (commandName === 'ask') {
+    else if (commandName === 'ask') {
       await interaction.deferReply();
       const question = interaction.options.getString('question');
       const answer = await askGroq(question,
