@@ -1276,16 +1276,31 @@ client.on('interactionCreate', async (interaction) => {
   }
 
     // 4. Get recent matches (last 5)
+    // const matchlistRes = await fetch(
+    //   `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
+    // );
+    // const matchIds = await matchlistRes.json();
+
+    // // 5. Get last match details
+    // const lastMatch = matchIds[0] ? await (await fetch(
+    //   `https://${routing}.api.riotgames.com/lol/match/v5/matches/${matchIds[0]}?api_key=${RIOT_KEY}`
+    // )).json() : null;
+
+    // 4. Get recent matches (last 5)
     const matchlistRes = await fetch(
       `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
     );
     const matchIds = await matchlistRes.json();
-
-    // 5. Get last match details
-    const lastMatch = matchIds[0] ? await (await fetch(
-      `https://${routing}.api.riotgames.com/lol/match/v5/matches/${matchIds[0]}?api_key=${RIOT_KEY}`
-    )).json() : null;
-
+    
+    // 5. Get last 5 match details
+    const matchDetails = await Promise.all(
+      matchIds.slice(0, 5).map(id => 
+        fetch(`https://${routing}.api.riotgames.com/lol/match/v5/matches/${id}?api_key=${RIOT_KEY}`)
+          .then(r => r.json())
+      )
+    );
+    const lastMatch = matchDetails[0] || null;
+    
     // Build ranked info
     const soloQ = ranked.find(r => r.queueType === 'RANKED_SOLO_5x5');
     const flexQ  = ranked.find(r => r.queueType === 'RANKED_FLEX_SR');
@@ -1299,16 +1314,30 @@ client.on('interactionCreate', async (interaction) => {
       : 'Unranked';
 
     // Build last match info
+    // let lastMatchStr = 'No recent games';
+    // if (lastMatch) {
+    //   const player = lastMatch.info.participants.find(p => p.puuid === account.puuid);
+    //   if (player) {
+    //     const kda = `${player.kills}/${player.deaths}/${player.assists}`;
+    //     const won = player.win ? '✅ Win' : '❌ Loss';
+    //     const cs = player.totalMinionsKilled + player.neutralMinionsKilled;
+    //     const mins = Math.floor(lastMatch.info.gameDuration / 60);
+    //     lastMatchStr = `${won} — **${player.championName}** — \`${kda}\` KDA — ${cs} CS (${mins}m)`;
+    //   }
+    // }
+
     let lastMatchStr = 'No recent games';
-    if (lastMatch) {
-      const player = lastMatch.info.participants.find(p => p.puuid === account.puuid);
-      if (player) {
-        const kda = `${player.kills}/${player.deaths}/${player.assists}`;
-        const won = player.win ? '✅ Win' : '❌ Loss';
-        const cs = player.totalMinionsKilled + player.neutralMinionsKilled;
-        const mins = Math.floor(lastMatch.info.gameDuration / 60);
-        lastMatchStr = `${won} — **${player.championName}** — \`${kda}\` KDA — ${cs} CS (${mins}m)`;
-      }
+    if (matchDetails.length) {
+      const lines = matchDetails.map(match => {
+        const p = match.info.participants.find(p => p.puuid === account.puuid);
+        if (!p) return null;
+        const kda = `${p.kills}/${p.deaths}/${p.assists}`;
+        const won = p.win ? '✅' : '❌';
+        const cs = p.totalMinionsKilled + p.neutralMinionsKilled;
+        const mins = Math.floor(match.info.gameDuration / 60);
+        return `${won} **${p.championName}** \`${kda}\` ${cs}cs ${mins}m`;
+      }).filter(Boolean);
+      lastMatchStr = lines.join('\n');
     }
 
     const iconUrl = `https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/${summoner.profileIconId}.png`;
