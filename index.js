@@ -1661,7 +1661,7 @@ client.on('interactionCreate', async (interaction) => {
           const tanky = p.totalDamageTaken >= 30000 ? '🛡️ Tank God' : '';
           const unkillable = p.deaths === 0 && mins >= 20 ? '💎 Deathless' : '';
           const badges = [firstBlood, pentakill, quadrakill, mvp, carried, supportGod, tanky, unkillable, inted].filter(Boolean).join(' ');
-          const badges = [firstBlood, pentakill, quadrakill, mvp, inted].filter(Boolean).join(' ');
+          // const badges = [firstBlood, pentakill, quadrakill, mvp, inted].filter(Boolean).join(' ');
     
           return new EmbedBuilder()
             .setColor(p.win ? '#2ecc71' : '#e74c3c')
