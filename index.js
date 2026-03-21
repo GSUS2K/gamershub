@@ -1229,10 +1229,12 @@ client.on('interactionCreate', async (interaction) => {
   };
   const routing = routingMap[region];
 
-  const matchRoutingMap = {
-    ...routingMap,
-    sg2: 'sea', // SEA match history
-  };
+  // const matchRoutingMap = {
+  //   ...routingMap,
+  //   sg2: 'sea', // SEA match history
+  // };
+      
+  const matchRouting = region === 'sg2' || region === 'oc1' ? 'sea' : routing;
 
   try {
     // Split Riot ID into name + tag
