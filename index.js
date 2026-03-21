@@ -1225,9 +1225,14 @@ client.on('interactionCreate', async (interaction) => {
   const routingMap = {
   euw1: 'europe', eun1: 'europe', tr1: 'europe',
   na1: 'americas', br1: 'americas',
-  kr: 'asia', jp1: 'asia', sg2: 'sea', oc1: 'sea'
+  kr: 'asia', jp1: 'asia', sg2: 'asia', oc1: 'sea'
   };
   const routing = routingMap[region];
+
+  const matchRoutingMap = {
+    ...routingMap,
+    sg2: 'sea', // SEA match history
+  };
 
   try {
     // Split Riot ID into name + tag
@@ -1290,8 +1295,11 @@ client.on('interactionCreate', async (interaction) => {
 
     console.log('Routing:', routing, 'Region:', region);
     
+    // const matchlistRes = await fetch(
+    //   `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
+    // );
     const matchlistRes = await fetch(
-      `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
+      `https://${matchRoutingMap[region]}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?start=0&count=5&api_key=${RIOT_KEY}`
     );
     const matchIds = await matchlistRes.json();
     
