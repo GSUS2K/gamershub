@@ -424,9 +424,11 @@ const commands = [
     )),
 
      // BS
-
-  new SlashCommandBuilder().setName('brawl').setDescription('Look up a Brawl Stars player')
+  new SlashCommandBuilder().setName('brawlhistory').setDescription('Recent Brawl Stars battle log')
     .addStringOption(o => o.setName('tag').setDescription('Player tag e.g. #ABC123').setRequired(true)),
+  
+  new SlashCommandBuilder().setName('brawl').setDescription('Look up a Brawl Stars player')
+    .addStringOption(o => o.setName('tag').setDescription('Player tag e.g. #ABC123').setRequired(true))
 
 ].map(c => c.toJSON());
 
@@ -969,6 +971,73 @@ client.on('interactionCreate', async (interaction) => {
     ]});
       } catch (err) {
         console.error('Brawl error:', err);
+        await interaction.editReply(`❌ Error: ${err.message}`);
+      }
+    }
+
+    else if (commandName === 'brawlhistory') {
+      await interaction.deferReply();
+      const BRAWL_KEY = process.env.BRAWL_API_KEY;
+      let tag = interaction.options.getString('tag').trim().replace('#', '').toUpperCase();
+    
+      try {
+        const res = await fetch(`https://api.brawlstars.com/v1/players/%23${tag}/battlelog`, {
+          headers: { Authorization: `Bearer ${BRAWL_KEY}` }
+        });
+        if (!res.ok) return interaction.editReply('❌ Player not found. Check the tag.');
+        const data = await res.json();
+        const battles = data.items?.slice(0, 5);
+        if (!battles?.length) return interaction.editReply('❌ No recent battles found.');
+    
+        const embeds = battles.map((battle, i) => {
+          const b = battle.battle;
+          const event = battle.event;
+          const time = new Date(battle.battleTime.replace(
+            /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/,
+            '$1-$2-$3T$4:$5:$6'
+          ));
+    
+          const result = b.result === 'victory' ? '✅ Victory' : b.result === 'defeat' ? '❌ Defeat' : '🤝 Draw';
+          const color = b.result === 'victory' ? '#2ecc71' : b.result === 'defeat' ? '#e74c3c' : '#f1c40f';
+          const mode = event.mode || 'Unknown Mode';
+          const map = event.map || 'Unknown Map';
+          const trophyChange = b.trophyChange ? (b.trophyChange > 0 ? `+${b.trophyChange} 🏆` : `${b.trophyChange} 🏆`) : '';
+    
+          // Find the player in the battle
+          const allPlayers = [
+            ...(b.players || []),
+            ...(b.teams?.flat() || [])
+          ];
+          const player = allPlayers.find(p => p?.tag === `#${tag}`);
+          const brawler = player?.brawler?.name || 'Unknown';
+          const brawlerTrophies = player?.brawler?.trophies || 0;
+    
+          // Star player
+          const starPlayer = b.starPlayer?.tag === `#${tag}` ? '⭐ Star Player' : '';
+    
+          const embed = new EmbedBuilder()
+            .setColor(color)
+            .setTitle(`${result} — ${mode}`)
+            .addFields(
+              { name: '🗺️ Map', value: map, inline: true },
+              { name: '🥊 Brawler', value: brawler, inline: true },
+              { name: '🏆 Trophies', value: trophyChange || 'N/A', inline: true },
+              { name: '🏅 Brawler Trophies', value: `${brawlerTrophies}`, inline: true },
+              { name: '🕐 Time', value: `<t:${Math.floor(time.getTime()/1000)}:R>`, inline: true },
+              ...(starPlayer ? [{ name: '⭐ Highlight', value: starPlayer, inline: true }] : [])
+            )
+            .setFooter({ text: `Battle ${i + 1} of 5` });
+    
+          return embed;
+        });
+    
+        await interaction.editReply({
+          content: `🎮 **Recent battles for #${tag}**`,
+          embeds
+        });
+    
+      } catch (err) {
+        console.error('Brawl history error:', err);
         await interaction.editReply(`❌ Error: ${err.message}`);
       }
     }
