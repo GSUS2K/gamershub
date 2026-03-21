@@ -1225,7 +1225,7 @@ client.on('interactionCreate', async (interaction) => {
   const routingMap = {
   euw1: 'europe', eun1: 'europe', tr1: 'europe',
   na1: 'americas', br1: 'americas',
-  kr: 'asia', jp1: 'asia', sg2: 'asia', oc1: 'sea'
+  kr: 'asia', jp1: 'asia', sg2: 'sea', oc1: 'sea'
   };
   const routing = routingMap[region];
 
