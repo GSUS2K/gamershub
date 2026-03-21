@@ -1310,6 +1310,9 @@ client.on('interactionCreate', async (interaction) => {
           .then(r => r.json())
       )
     );
+
+    console.log('First match raw:', JSON.stringify(matchDetails[0])?.slice(0, 200));
+    
     const lastMatch = matchDetails[0] || null;
     
     // Build ranked info
