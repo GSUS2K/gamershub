@@ -1340,6 +1340,9 @@ client.on('interactionCreate', async (interaction) => {
       lastMatchStr = lines.join('\n');
     }
 
+  console.log('Match IDs:', matchIds);
+  console.log('Match details count:', matchDetails.length);
+
     const iconUrl = `https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/${summoner.profileIconId}.png`;
 
     await interaction.editReply({ embeds: [
