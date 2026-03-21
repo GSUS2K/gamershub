@@ -1996,7 +1996,8 @@ client.on('messageCreate', async (message) => {
   }
 
   // ── Solitude AI Chat ──────────────────────────────────────────────────────
-if (message.channel.name === 'solitude') {
+// if (message.channel.name === 'solitude') {
+if (message.channel.id === '1482086962348429404') {
   await message.channel.sendTyping();
     try {
       const recent = await message.channel.messages.fetch({ limit: 10 });
