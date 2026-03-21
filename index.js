@@ -35,6 +35,11 @@ const Warning = mongoose.model('Warning', new mongoose.Schema({
   mod: String,
 }));
 
+const BrawlAccount = mongoose.model('BrawlAccount', new mongoose.Schema({
+  discordId: { type: String, unique: true },
+  tag: String,
+}));
+
 const {
   Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes,
   EmbedBuilder, PermissionFlagsBits, MessageFlags, Partials
@@ -224,6 +229,17 @@ function decode(str) {
 
 // ─── SLASH COMMAND DEFINITIONS ────────────────────────────────────────────────
 const commands = [
+  new SlashCommandBuilder().setName('serverinfo').setDescription('Server information and stats'),
+
+  new SlashCommandBuilder().setName('userinfo').setDescription('User information')
+  .addUserOption(o => o.setName('user').setDescription('User to check (defaults to you)')),
+
+  new SlashCommandBuilder().setName('activity').setDescription('Most active users this week 📊'),
+
+  new SlashCommandBuilder().setName('remind').setDescription('Set a reminder ⏰')
+  .addStringOption(o => o.setName('time').setDescription('When? e.g. 10m, 2h, 1d').setRequired(true))
+  .addStringOption(o => o.setName('message').setDescription('What to remind you about').setRequired(true)),
+  
   // ── AI ──
   new SlashCommandBuilder().setName('ask').setDescription('Ask Groq AI anything')
     .addStringOption(o => o.setName('question').setDescription('Your question').setRequired(true)),
@@ -424,11 +440,18 @@ const commands = [
     )),
 
      // BS
+  new SlashCommandBuilder().setName('brawllink').setDescription('Link your Brawl Stars tag to your Discord')
+  .addStringOption(o => o.setName('tag').setDescription('Your player tag e.g. #ABC123').setRequired(true)),
+  
   new SlashCommandBuilder().setName('brawlhistory').setDescription('Recent Brawl Stars battle log')
     .addStringOption(o => o.setName('tag').setDescription('Player tag e.g. #ABC123').setRequired(true)),
   
+  // new SlashCommandBuilder().setName('brawl').setDescription('Look up a Brawl Stars player')
+  //   .addStringOption(o => o.setName('tag').setDescription('Player tag e.g. #ABC123').setRequired(true))
+
   new SlashCommandBuilder().setName('brawl').setDescription('Look up a Brawl Stars player')
-    .addStringOption(o => o.setName('tag').setDescription('Player tag e.g. #ABC123').setRequired(true))
+  .addUserOption(o => o.setName('user').setDescription('Mention a linked Discord user (optional)'))
+  .addStringOption(o => o.setName('tag').setDescription('Player tag e.g. #ABC123 (optional if linked)')),
 
 ].map(c => c.toJSON());
 
@@ -485,6 +508,105 @@ client.on('interactionCreate', async (interaction) => {
   const { commandName } = interaction;
 
   try {
+
+    else if (commandName === 'remind') {
+      const timeStr = interaction.options.getString('time');
+      const reminderMsg = interaction.options.getString('message');
+    
+      const match = timeStr.match(/^(\d+)(s|m|h|d)$/);
+      if (!match) return interaction.reply({ content: '❌ Invalid time format. Use e.g. `10m`, `2h`, `1d`, `30s`', flags: MessageFlags.Ephemeral });
+    
+      const value = parseInt(match[1]);
+      const unit = match[2];
+      const multipliers = { s: 1000, m: 60000, h: 3600000, d: 86400000 };
+      const ms = value * multipliers[unit];
+    
+      if (ms > 7 * 24 * 60 * 60 * 1000) return interaction.reply({ content: '❌ Max reminder time is 7 days.', flags: MessageFlags.Ephemeral });
+    
+      const unitNames = { s: 'second', m: 'minute', h: 'hour', d: 'day' };
+      const label = `${value} ${unitNames[unit]}${value > 1 ? 's' : ''}`;
+    
+      await interaction.reply({ embeds: [mkEmbed('#f39c12', '⏰ Reminder Set', `I'll remind you about **${reminderMsg}** in **${label}**!`)] });
+    
+      setTimeout(async () => {
+        try {
+          await interaction.user.send({ embeds: [
+            mkEmbed('#f39c12', '⏰ Reminder!', `You asked me to remind you:\n\n**${reminderMsg}**`)
+              .setFooter({ text: `Set ${label} ago in ${interaction.guild.name}` })
+          ]});
+        } catch {
+          // DMs closed, send in channel instead
+          interaction.channel.send({ content: `${interaction.user} ⏰ Reminder: **${reminderMsg}**` });
+        }
+      }, ms);
+    }
+
+    else if (commandName === 'serverinfo') {
+      const g = interaction.guild;
+      await g.fetch();
+      const owner = await g.fetchOwner();
+      const channels = g.channels.cache;
+      const textChannels = channels.filter(c => c.type === 0).size;
+      const voiceChannels = channels.filter(c => c.type === 2).size;
+      const roles = g.roles.cache.size - 1;
+      const boosts = g.premiumSubscriptionCount || 0;
+      const boostLevel = g.premiumTier;
+    
+      await interaction.reply({ embeds: [
+        new EmbedBuilder()
+          .setColor('#5865f2')
+          .setTitle(`📊 ${g.name}`)
+          .setThumbnail(g.iconURL())
+          .addFields(
+            { name: '👑 Owner', value: owner.user.tag, inline: true },
+            { name: '📅 Created', value: `<t:${Math.floor(g.createdTimestamp/1000)}:R>`, inline: true },
+            { name: '👥 Members', value: `${g.memberCount}`, inline: true },
+            { name: '💬 Text Channels', value: `${textChannels}`, inline: true },
+            { name: '🔊 Voice Channels', value: `${voiceChannels}`, inline: true },
+            { name: '🎭 Roles', value: `${roles}`, inline: true },
+            { name: '🚀 Boosts', value: `${boosts} (Level ${boostLevel})`, inline: true },
+            { name: '😀 Emojis', value: `${g.emojis.cache.size}`, inline: true },
+            { name: '🌍 Region', value: g.preferredLocale, inline: true },
+          )
+          .setFooter({ text: `Server ID: ${g.id}` })
+          .setTimestamp()
+      ]});
+    }
+    
+    else if (commandName === 'userinfo') {
+      const target = interaction.options.getUser('user') || interaction.user;
+      const member = await interaction.guild.members.fetch(target.id);
+      const roles = member.roles.cache.filter(r => r.id !== interaction.guild.id).map(r => r.toString()).join(', ') || 'No roles';
+    
+      await interaction.reply({ embeds: [
+        new EmbedBuilder()
+          .setColor('#3498db')
+          .setTitle(`👤 ${target.username}`)
+          .setThumbnail(target.displayAvatarURL())
+          .addFields(
+            { name: '🪪 Username', value: target.tag, inline: true },
+            { name: '🤖 Bot', value: target.bot ? 'Yes' : 'No', inline: true },
+            { name: '🆔 ID', value: target.id, inline: true },
+            { name: '📅 Account Created', value: `<t:${Math.floor(target.createdTimestamp/1000)}:R>`, inline: true },
+            { name: '📥 Joined Server', value: `<t:${Math.floor(member.joinedTimestamp/1000)}:R>`, inline: true },
+            { name: '🎨 Nickname', value: member.nickname || 'None', inline: true },
+            { name: '🎭 Roles', value: roles.slice(0, 1024), inline: false },
+          )
+          .setTimestamp()
+      ]});
+    }
+    
+    else if (commandName === 'activity') {
+      const prefix = `${interaction.guildId}-`;
+      const entries = await XPData.find({ key: new RegExp(`^${prefix}`) })
+        .sort({ level: -1, xp: -1 }).limit(10);
+      if (!entries.length) return interaction.reply({ content: 'No activity recorded yet!', ephemeral: true });
+      const medals = ['🥇','🥈','🥉'];
+      const lines = entries.map((e, i) => 
+        `${medals[i] || `**${i+1}.**`} <@${e.key.replace(prefix,'')}> — Level ${e.level} *(${e.xp} XP)*`
+      ).join('\n');
+      await interaction.reply({ embeds: [mkEmbed('#f1c40f', '📊 Most Active Members', lines)] });
+    }
 
     // ════════════════════════════════════════════
     //                   AI COMMANDS
@@ -936,39 +1058,98 @@ client.on('interactionCreate', async (interaction) => {
       for (const emoji of emojis) await msg.react(emoji);
     }
 
+  //   else if (commandName === 'brawl') {
+  // await interaction.deferReply();
+  // const BRAWL_KEY = process.env.BRAWL_API_KEY;
+  // let tag = interaction.options.getString('tag').trim().replace('#', '').toUpperCase();
+
+  // try {
+  //   const res = await fetch(`https://api.brawlstars.com/v1/players/%23${tag}`, {
+  //     headers: { Authorization: `Bearer ${BRAWL_KEY}` }
+  //   });
+  //   console.log('Brawl status:', res.status);
+  //   if (!res.ok) return interaction.editReply('❌ Player not found. Check the tag and try again.');
+  //   const p = await res.json();
+  //   console.log('Brawl response:', p);
+  //   const brawlers = p.brawlers.sort((a, b) => b.trophies - a.trophies).slice(0, 3)
+  //     .map(b => `**${b.name}** — 🏆 ${b.trophies} (Rank ${b.rank})`).join('\n');
+
+  //   await interaction.editReply({ embeds: [
+  //     new EmbedBuilder()
+  //       .setColor('#FF6B35')
+  //       .setTitle(`🎮 ${p.name} (${p.tag})`)
+  //       .addFields(
+  //         { name: '🏆 Trophies', value: `${p.trophies.toLocaleString()}`, inline: true },
+  //         { name: '🏅 Highest', value: `${p.highestTrophies.toLocaleString()}`, inline: true },
+  //         { name: '🎯 3v3 Wins', value: `${p['3vs3Victories'].toLocaleString()}`, inline: true },
+  //         { name: '⚔️ Solo Wins', value: `${p.soloVictories.toLocaleString()}`, inline: true },
+  //         { name: '👥 Duo Wins', value: `${p.duoVictories.toLocaleString()}`, inline: true },
+  //         { name: '🤖 Brawlers', value: `${p.brawlers.length}`, inline: true },
+  //         { name: '🌟 Top 3 Brawlers', value: brawlers, inline: false },
+  //         { name: '🏠 Club', value: p.club?.name || 'No club', inline: true },
+  //       )
+  //       .setFooter({ text: 'Brawl Stars Stats' })
+  //       .setTimestamp()
+  //   ]});
+  //     } catch (err) {
+  //       console.error('Brawl error:', err);
+  //       await interaction.editReply(`❌ Error: ${err.message}`);
+  //     }
+  //   }
+
+    else if (commandName === 'brawllink') {
+      const tag = interaction.options.getString('tag').trim().replace('#', '').toUpperCase();
+      await BrawlAccount.findOneAndUpdate(
+        { discordId: interaction.user.id },
+        { tag },
+        { upsert: true }
+      );
+      await interaction.reply({ content: `✅ Linked Brawl Stars tag **#${tag}** to your Discord!`, flags: MessageFlags.Ephemeral });
+    }
+    
     else if (commandName === 'brawl') {
-  await interaction.deferReply();
-  const BRAWL_KEY = process.env.BRAWL_API_KEY;
-  let tag = interaction.options.getString('tag').trim().replace('#', '').toUpperCase();
-
-  try {
-    const res = await fetch(`https://api.brawlstars.com/v1/players/%23${tag}`, {
-      headers: { Authorization: `Bearer ${BRAWL_KEY}` }
-    });
-    console.log('Brawl status:', res.status);
-    if (!res.ok) return interaction.editReply('❌ Player not found. Check the tag and try again.');
-    const p = await res.json();
-    console.log('Brawl response:', p);
-    const brawlers = p.brawlers.sort((a, b) => b.trophies - a.trophies).slice(0, 3)
-      .map(b => `**${b.name}** — 🏆 ${b.trophies} (Rank ${b.rank})`).join('\n');
-
-    await interaction.editReply({ embeds: [
-      new EmbedBuilder()
-        .setColor('#FF6B35')
-        .setTitle(`🎮 ${p.name} (${p.tag})`)
-        .addFields(
-          { name: '🏆 Trophies', value: `${p.trophies.toLocaleString()}`, inline: true },
-          { name: '🏅 Highest', value: `${p.highestTrophies.toLocaleString()}`, inline: true },
-          { name: '🎯 3v3 Wins', value: `${p['3vs3Victories'].toLocaleString()}`, inline: true },
-          { name: '⚔️ Solo Wins', value: `${p.soloVictories.toLocaleString()}`, inline: true },
-          { name: '👥 Duo Wins', value: `${p.duoVictories.toLocaleString()}`, inline: true },
-          { name: '🤖 Brawlers', value: `${p.brawlers.length}`, inline: true },
-          { name: '🌟 Top 3 Brawlers', value: brawlers, inline: false },
-          { name: '🏠 Club', value: p.club?.name || 'No club', inline: true },
-        )
-        .setFooter({ text: 'Brawl Stars Stats' })
-        .setTimestamp()
-    ]});
+      await interaction.deferReply();
+      const BRAWL_KEY = process.env.BRAWL_API_KEY;
+      const mentionedUser = interaction.options.getUser('user');
+      const rawTag = interaction.options.getString('tag');
+      let tag;
+    
+      if (mentionedUser || !rawTag) {
+        const targetId = mentionedUser?.id || interaction.user.id;
+        const linked = await BrawlAccount.findOne({ discordId: targetId });
+        if (!linked) return interaction.editReply(`❌ ${mentionedUser ? 'That user has' : 'You have'} not linked a Brawl Stars tag. Use \`/brawllink\` first.`);
+        tag = linked.tag;
+      } else {
+        tag = rawTag.trim().replace('#', '').toUpperCase();
+      }
+    
+      try {
+        const res = await fetch(`https://api.brawlstars.com/v1/players/%23${tag}`, {
+          headers: { Authorization: `Bearer ${BRAWL_KEY}` }
+        });
+        if (!res.ok) return interaction.editReply('❌ Player not found. Check the tag.');
+        const p = await res.json();
+    
+        const brawlers = p.brawlers.sort((a, b) => b.trophies - a.trophies).slice(0, 3)
+          .map(b => `**${b.name}** — 🏆 ${b.trophies} (Rank ${b.rank})`).join('\n');
+    
+        await interaction.editReply({ embeds: [
+          new EmbedBuilder()
+            .setColor('#FF6B35')
+            .setTitle(`🎮 ${p.name} (${p.tag})`)
+            .addFields(
+              { name: '🏆 Trophies', value: `${p.trophies.toLocaleString()}`, inline: true },
+              { name: '🏅 Highest', value: `${p.highestTrophies.toLocaleString()}`, inline: true },
+              { name: '🎯 3v3 Wins', value: `${p['3vs3Victories'].toLocaleString()}`, inline: true },
+              { name: '⚔️ Solo Wins', value: `${p.soloVictories.toLocaleString()}`, inline: true },
+              { name: '👥 Duo Wins', value: `${p.duoVictories.toLocaleString()}`, inline: true },
+              { name: '🤖 Brawlers', value: `${p.brawlers.length}`, inline: true },
+              { name: '🌟 Top 3 Brawlers', value: brawlers, inline: false },
+              { name: '🏠 Club', value: p.club?.name || 'No club', inline: true },
+            )
+            .setFooter({ text: 'Use /brawlhistory for battle log • /brawllink to save your tag' })
+            .setTimestamp()
+        ]});
       } catch (err) {
         console.error('Brawl error:', err);
         await interaction.editReply(`❌ Error: ${err.message}`);
