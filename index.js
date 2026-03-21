@@ -1163,7 +1163,19 @@ client.on('interactionCreate', async (interaction) => {
     else if (commandName === 'brawlhistory') {
       await interaction.deferReply();
       const BRAWL_KEY = process.env.BRAWL_API_KEY;
-      let tag = interaction.options.getString('tag').trim().replace('#', '').toUpperCase();
+      // let tag = interaction.options.getString('tag').trim().replace('#', '').toUpperCase();
+      const mentionedUser = interaction.options.getUser('user');
+      const rawTag = interaction.options.getString('tag');
+      let tag;
+      
+      if (mentionedUser || !rawTag) {
+        const targetId = mentionedUser?.id || interaction.user.id;
+        const linked = await BrawlAccount.findOne({ discordId: targetId });
+        if (!linked) return interaction.editReply(`❌ ${mentionedUser ? 'That user has' : 'You have'} not linked a Brawl Stars tag. Use \`/brawllink\` first.`);
+        tag = linked.tag;
+      } else {
+        tag = rawTag.trim().replace('#', '').toUpperCase();
+      }
     
       try {
         const res = await fetch(`https://api.brawlstars.com/v1/players/%23${tag}/battlelog`, {
