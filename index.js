@@ -1014,41 +1014,67 @@ client.on('interactionCreate', async (interaction) => {
     //   }
     // }
 
-    else if (commandName === 'play') {
-      const query = interaction.options.getString('query');
-      console.log('Play command triggered:', query);
-      const voiceChannel = interaction.member.voice?.channel;
-      if (!voiceChannel) return interaction.reply({ content: '❌ Join a voice channel first!', flags: MessageFlags.Ephemeral });
-      await interaction.deferReply();
-      try {
-        // const { track } = await player.play(voiceChannel, query, {
-        //   nodeOptions: { metadata: { channel: interaction.channel } }
-        // });
-        // const { track } = await player.play(voiceChannel, query, {
-        //   nodeOptions: {
-        //     metadata: { channel: interaction.channel },
-        //     bufferingTimeout: 3000,
-        //     streamConfig: {
-        //       useFFmpeg: true,
-        //       filters: { ffmpeg: { args: ['-af', 'aresample=48000'] } }
-        //     }
-        //   }
-        // });
-        const { track } = await player.play(voiceChannel, query, {
-          nodeOptions: {
-            metadata: { channel: interaction.channel },
-          },
-          requestOptions: {
-            headers: {
-              cookie: require('fs').readFileSync('/home/ganesh21112000/gamershub/cookies.txt', 'utf8')
+    // else if (commandName === 'play') {
+    //   const query = interaction.options.getString('query');
+    //   console.log('Play command triggered:', query);
+    //   const voiceChannel = interaction.member.voice?.channel;
+    //   if (!voiceChannel) return interaction.reply({ content: '❌ Join a voice channel first!', flags: MessageFlags.Ephemeral });
+    //   await interaction.deferReply();
+    //   try {
+    //     // const { track } = await player.play(voiceChannel, query, {
+    //     //   nodeOptions: { metadata: { channel: interaction.channel } }
+    //     // });
+    //     // const { track } = await player.play(voiceChannel, query, {
+    //     //   nodeOptions: {
+    //     //     metadata: { channel: interaction.channel },
+    //     //     bufferingTimeout: 3000,
+    //     //     streamConfig: {
+    //     //       useFFmpeg: true,
+    //     //       filters: { ffmpeg: { args: ['-af', 'aresample=48000'] } }
+    //     //     }
+    //     //   }
+    //     // });
+    //     const { track } = await player.play(voiceChannel, query, {
+    //       nodeOptions: {
+    //         metadata: { channel: interaction.channel },
+    //       },
+    //       requestOptions: {
+    //         headers: {
+    //           cookie: require('fs').readFileSync('/home/ganesh21112000/gamershub/cookies.txt', 'utf8')
+    //         }
+    //       }
+    //     });
+    //     await interaction.editReply({ embeds: [mkEmbed('#1db954', '🎵 Added to Queue', `**${track.title}**\nDuration: \`${track.duration}\` | By: **${track.author}**`)] });
+    //   } catch (err) {
+    //     await interaction.editReply(`❌ Error: ${err.message}`);
+    //   }
+    // }
+
+      else if (commandName === 'play') {
+        const query = interaction.options.getString('query');
+        console.log('Play command triggered:', query);
+        const voiceChannel = interaction.member.voice?.channel;
+        if (!voiceChannel) return interaction.reply({ content: '❌ Join a voice channel first!', flags: MessageFlags.Ephemeral });
+        await interaction.deferReply();
+        try {
+          const { track } = await player.play(voiceChannel, query, {
+            nodeOptions: {
+              metadata: { channel: interaction.channel },
+              ytdlOptions: {
+                requestOptions: {
+                  headers: {
+                    cookie: require('fs').readFileSync('/home/ganesh21112000/gamershub/cookies.txt', 'utf8')
+                  }
+                }
+              }
             }
-          }
-        });
-        await interaction.editReply({ embeds: [mkEmbed('#1db954', '🎵 Added to Queue', `**${track.title}**\nDuration: \`${track.duration}\` | By: **${track.author}**`)] });
-      } catch (err) {
-        await interaction.editReply(`❌ Error: ${err.message}`);
+          });
+          await interaction.editReply({ embeds: [mkEmbed('#1db954', '🎵 Added to Queue', `**${track.title}**\nDuration: \`${track.duration}\` | By: **${track.author}**`)] });
+        } catch (err) {
+          console.error('Play error:', err);
+          await interaction.editReply(`❌ Error: ${err.message}`);
+        }
       }
-    }
 
     // else if (commandName === 'skip') {
     //   const q = getQueue(interaction.guildId);
