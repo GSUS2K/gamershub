@@ -69,27 +69,27 @@ const client = new Client({
   ]
 });
 
-const { Player } = require('discord-player');
-const { DefaultExtractors } = require('@discord-player/extractor');
-const player = new Player(client);
+// const { Player } = require('discord-player');
+// const { DefaultExtractors } = require('@discord-player/extractor');
+// const player = new Player(client);
 
-player.events.on('playerStart', (queue, track) => {
-  queue.metadata.channel.send({ embeds: [mkEmbed('#1db954', '🎵 Now Playing', `**${track.title}**\nBy: **${track.author}** | Duration: \`${track.duration}\``)] });
-});
-player.events.on('emptyQueue', (queue) => {
-  queue.metadata.channel.send('✅ Queue finished!');
-});
-player.events.on('playerError', (queue, error) => {
-  console.error('Player error:', error);
-  queue.metadata.channel.send(`❌ Player error: ${error.message}`);
-});
-player.events.on('debug', (queue, message) => {
-  console.log(`[Player Debug] ${message}`);
-});
-player.events.on('error', (queue, error) => {
-  console.error('Player error:', error);
-  queue.metadata.channel.send(`❌ Error: ${error.message}`);
-});
+// player.events.on('playerStart', (queue, track) => {
+//   queue.metadata.channel.send({ embeds: [mkEmbed('#1db954', '🎵 Now Playing', `**${track.title}**\nBy: **${track.author}** | Duration: \`${track.duration}\``)] });
+// });
+// player.events.on('emptyQueue', (queue) => {
+//   queue.metadata.channel.send('✅ Queue finished!');
+// });
+// player.events.on('playerError', (queue, error) => {
+//   console.error('Player error:', error);
+//   queue.metadata.channel.send(`❌ Player error: ${error.message}`);
+// });
+// player.events.on('debug', (queue, message) => {
+//   console.log(`[Player Debug] ${message}`);
+// });
+// player.events.on('error', (queue, error) => {
+//   console.error('Player error:', error);
+//   queue.metadata.channel.send(`❌ Error: ${error.message}`);
+// });
 
 // const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -323,15 +323,15 @@ const commands = [
     new SlashCommandBuilder().setName('tldr').setDescription('Summarize the last 20 messages in this channel'),
 
   // ── MUSIC ──
-  new SlashCommandBuilder().setName('play').setDescription('Play a song 🎵')
-    .addStringOption(o => o.setName('query').setDescription('Song name or YouTube URL').setRequired(true)),
+  // new SlashCommandBuilder().setName('play').setDescription('Play a song 🎵')
+  //   .addStringOption(o => o.setName('query').setDescription('Song name or YouTube URL').setRequired(true)),
 
-  new SlashCommandBuilder().setName('skip').setDescription('Skip the current song ⏭️'),
-  new SlashCommandBuilder().setName('stop').setDescription('Stop music and clear queue ⏹️'),
-  new SlashCommandBuilder().setName('queue').setDescription('Show the music queue 📋'),
-  new SlashCommandBuilder().setName('nowplaying').setDescription('What is currently playing? 🎶'),
-  new SlashCommandBuilder().setName('pause').setDescription('Pause the music ⏸️'),
-  new SlashCommandBuilder().setName('resume').setDescription('Resume the music ▶️'),
+  // new SlashCommandBuilder().setName('skip').setDescription('Skip the current song ⏭️'),
+  // new SlashCommandBuilder().setName('stop').setDescription('Stop music and clear queue ⏹️'),
+  // new SlashCommandBuilder().setName('queue').setDescription('Show the music queue 📋'),
+  // new SlashCommandBuilder().setName('nowplaying').setDescription('What is currently playing? 🎶'),
+  // new SlashCommandBuilder().setName('pause').setDescription('Pause the music ⏸️'),
+  // new SlashCommandBuilder().setName('resume').setDescription('Resume the music ▶️'),
 
   // ── OWNER ──
   new SlashCommandBuilder().setName('relay').setDescription('[Owner] Send a message as the bot')
@@ -424,13 +424,13 @@ client.once('clientReady', async () => {
     } catch {
       console.log('FFmpeg not found!');
     }
-  await player.extractors.loadMulti(DefaultExtractors);
-const { SpotifyExtractor } = require('@discord-player/extractor');
-await player.extractors.register(SpotifyExtractor, {
-  clientId: process.env.SPOTIFY_CLIENT_ID,
-  clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-});
-  console.log('✅ Music extractors loaded');
+//   await player.extractors.loadMulti(DefaultExtractors);
+// const { SpotifyExtractor } = require('@discord-player/extractor');
+// await player.extractors.register(SpotifyExtractor, {
+//   clientId: process.env.SPOTIFY_CLIENT_ID,
+//   clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+// });
+//   console.log('✅ Music extractors loaded');
   console.log(`✅ Logged in as ${client.user.tag}`);
   // client.user.setActivity('your server 👀', { type: 3 }); // WATCHING
 
@@ -1050,31 +1050,31 @@ client.on('interactionCreate', async (interaction) => {
     //   }
     // }
 
-      else if (commandName === 'play') {
-        const query = interaction.options.getString('query');
-        console.log('Play command triggered:', query);
-        const voiceChannel = interaction.member.voice?.channel;
-        if (!voiceChannel) return interaction.reply({ content: '❌ Join a voice channel first!', flags: MessageFlags.Ephemeral });
-        await interaction.deferReply();
-        try {
-          const { track } = await player.play(voiceChannel, query, {
-            nodeOptions: {
-              metadata: { channel: interaction.channel },
-              ytdlOptions: {
-                requestOptions: {
-                  headers: {
-                    cookie: require('fs').readFileSync('/home/ganesh21112000/gamershub/cookies.txt', 'utf8')
-                  }
-                }
-              }
-            }
-          });
-          await interaction.editReply({ embeds: [mkEmbed('#1db954', '🎵 Added to Queue', `**${track.title}**\nDuration: \`${track.duration}\` | By: **${track.author}**`)] });
-        } catch (err) {
-          console.error('Play error:', err);
-          await interaction.editReply(`❌ Error: ${err.message}`);
-        }
-      }
+      // else if (commandName === 'play') {
+      //   const query = interaction.options.getString('query');
+      //   console.log('Play command triggered:', query);
+      //   const voiceChannel = interaction.member.voice?.channel;
+      //   if (!voiceChannel) return interaction.reply({ content: '❌ Join a voice channel first!', flags: MessageFlags.Ephemeral });
+      //   await interaction.deferReply();
+      //   try {
+      //     const { track } = await player.play(voiceChannel, query, {
+      //       nodeOptions: {
+      //         metadata: { channel: interaction.channel },
+      //         ytdlOptions: {
+      //           requestOptions: {
+      //             headers: {
+      //               cookie: require('fs').readFileSync('/home/ganesh21112000/gamershub/cookies.txt', 'utf8')
+      //             }
+      //           }
+      //         }
+      //       }
+      //     });
+      //     await interaction.editReply({ embeds: [mkEmbed('#1db954', '🎵 Added to Queue', `**${track.title}**\nDuration: \`${track.duration}\` | By: **${track.author}**`)] });
+      //   } catch (err) {
+      //     console.error('Play error:', err);
+      //     await interaction.editReply(`❌ Error: ${err.message}`);
+      //   }
+      // }
 
     // else if (commandName === 'skip') {
     //   const q = getQueue(interaction.guildId);
@@ -1084,13 +1084,13 @@ client.on('interactionCreate', async (interaction) => {
     //   await interaction.reply({ embeds: [mkEmbed('#1db954','⏭️ Skipped', `**${skipped}**`)] });
     // }
 
-    else if (commandName === 'skip') {
-      const queue = player.nodes.get(interaction.guildId);
-      if (!queue?.isPlaying()) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
-      const track = queue.currentTrack;
-      queue.node.skip();
-      await interaction.reply({ embeds: [mkEmbed('#1db954', '⏭️ Skipped', `**${track.title}**`)] });
-    }
+    // else if (commandName === 'skip') {
+    //   const queue = player.nodes.get(interaction.guildId);
+    //   if (!queue?.isPlaying()) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
+    //   const track = queue.currentTrack;
+    //   queue.node.skip();
+    //   await interaction.reply({ embeds: [mkEmbed('#1db954', '⏭️ Skipped', `**${track.title}**`)] });
+    // }
 
     // else if (commandName === 'stop') {
     //   const q = getQueue(interaction.guildId);
@@ -1102,12 +1102,12 @@ client.on('interactionCreate', async (interaction) => {
     //   await interaction.reply({ embeds: [mkEmbed('#e74c3c','⏹️ Music Stopped', 'Queue cleared and disconnected from voice channel.')] });
     // }
 
-    else if (commandName === 'stop') {
-      const queue = player.nodes.get(interaction.guildId);
-      if (!queue) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
-      queue.delete();
-      await interaction.reply({ embeds: [mkEmbed('#e74c3c', '⏹️ Stopped', 'Queue cleared and disconnected.')] });
-    }
+    // else if (commandName === 'stop') {
+    //   const queue = player.nodes.get(interaction.guildId);
+    //   if (!queue) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
+    //   queue.delete();
+    //   await interaction.reply({ embeds: [mkEmbed('#e74c3c', '⏹️ Stopped', 'Queue cleared and disconnected.')] });
+    // }
 
     // else if (commandName === 'queue') {
     //   const q = getQueue(interaction.guildId);
@@ -1118,15 +1118,15 @@ client.on('interactionCreate', async (interaction) => {
     //   await interaction.reply({ embeds: [mkEmbed('#1db954',`🎵 Queue (${q.songs.length} upcoming)`, lines.join('\n').slice(0, 4000))] });
     // }
 
-    else if (commandName === 'queue') {
-      const queue = player.nodes.get(interaction.guildId);
-      if (!queue?.isPlaying()) return interaction.reply({ content: '❌ Queue is empty!', flags: MessageFlags.Ephemeral });
-      const tracks = queue.tracks.toArray().slice(0, 10);
-      const current = queue.currentTrack;
-      const lines = [`▶️ **NOW:** ${current.title} \`[${current.duration}]\``];
-      tracks.forEach((t, i) => lines.push(`**${i+1}.** ${t.title} \`[${t.duration}]\``));
-      await interaction.reply({ embeds: [mkEmbed('#1db954', `🎵 Queue (${queue.tracks.size} upcoming)`, lines.join('\n'))] });
-    }
+    // else if (commandName === 'queue') {
+    //   const queue = player.nodes.get(interaction.guildId);
+    //   if (!queue?.isPlaying()) return interaction.reply({ content: '❌ Queue is empty!', flags: MessageFlags.Ephemeral });
+    //   const tracks = queue.tracks.toArray().slice(0, 10);
+    //   const current = queue.currentTrack;
+    //   const lines = [`▶️ **NOW:** ${current.title} \`[${current.duration}]\``];
+    //   tracks.forEach((t, i) => lines.push(`**${i+1}.** ${t.title} \`[${t.duration}]\``));
+    //   await interaction.reply({ embeds: [mkEmbed('#1db954', `🎵 Queue (${queue.tracks.size} upcoming)`, lines.join('\n'))] });
+    // }
 
     // else if (commandName === 'nowplaying') {
     //   const q = getQueue(interaction.guildId);
@@ -1136,13 +1136,13 @@ client.on('interactionCreate', async (interaction) => {
     //   )]});
     // }
 
-    else if (commandName === 'nowplaying') {
-      const queue = player.nodes.get(interaction.guildId);
-      if (!queue?.isPlaying()) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
-      const track = queue.currentTrack;
-      const progress = queue.node.createProgressBar();
-      await interaction.reply({ embeds: [mkEmbed('#1db954', '🎵 Now Playing', `**${track.title}**\nBy: **${track.author}**\n\n${progress}`)] });
-    }
+    // else if (commandName === 'nowplaying') {
+    //   const queue = player.nodes.get(interaction.guildId);
+    //   if (!queue?.isPlaying()) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
+    //   const track = queue.currentTrack;
+    //   const progress = queue.node.createProgressBar();
+    //   await interaction.reply({ embeds: [mkEmbed('#1db954', '🎵 Now Playing', `**${track.title}**\nBy: **${track.author}**\n\n${progress}`)] });
+    // }
 
     // else if (commandName === 'pause') {
     //   const q = getQueue(interaction.guildId);
@@ -1151,12 +1151,12 @@ client.on('interactionCreate', async (interaction) => {
     //   await interaction.reply({ embeds: [mkEmbed('#f39c12','⏸️ Paused', `**${q.current.title}** has been paused. Use \`/resume\` to continue.`)] });
     // }
 
-    else if (commandName === 'pause') {
-      const queue = player.nodes.get(interaction.guildId);
-      if (!queue?.isPlaying()) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
-      queue.node.setPaused(true);
-      await interaction.reply({ embeds: [mkEmbed('#f39c12', '⏸️ Paused', `**${queue.currentTrack.title}**`)] });
-    }
+    // else if (commandName === 'pause') {
+    //   const queue = player.nodes.get(interaction.guildId);
+    //   if (!queue?.isPlaying()) return interaction.reply({ content: '❌ Nothing is playing!', flags: MessageFlags.Ephemeral });
+    //   queue.node.setPaused(true);
+    //   await interaction.reply({ embeds: [mkEmbed('#f39c12', '⏸️ Paused', `**${queue.currentTrack.title}**`)] });
+    // }
 
     // else if (commandName === 'resume') {
     //   const q = getQueue(interaction.guildId);
@@ -1165,12 +1165,12 @@ client.on('interactionCreate', async (interaction) => {
     //   await interaction.reply({ embeds: [mkEmbed('#1db954','▶️ Resumed', `**${q.current?.title || 'Music'}** is playing again.`)] });
     // }
 
-    else if (commandName === 'resume') {
-      const queue = player.nodes.get(interaction.guildId);
-      if (!queue) return interaction.reply({ content: '❌ Nothing is paused!', flags: MessageFlags.Ephemeral });
-      queue.node.setPaused(false);
-      await interaction.reply({ embeds: [mkEmbed('#1db954', '▶️ Resumed', `**${queue.currentTrack.title}**`)] });
-    }
+    // else if (commandName === 'resume') {
+    //   const queue = player.nodes.get(interaction.guildId);
+    //   if (!queue) return interaction.reply({ content: '❌ Nothing is paused!', flags: MessageFlags.Ephemeral });
+    //   queue.node.setPaused(false);
+    //   await interaction.reply({ embeds: [mkEmbed('#1db954', '▶️ Resumed', `**${queue.currentTrack.title}**`)] });
+    // }
 
 
     // ════════════════════════════════════════════
